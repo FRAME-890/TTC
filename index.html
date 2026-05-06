@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Kanit', sans-serif; background-color: #f0f7f2; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.5); }
+        .seat { transition: all 0.2s ease; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 10px; font-size: 10px; text-align: center; }
+        .seat-vacant { background: white; border: 1px solid #e2e8f0; color: #94a3b8; }
+        .seat-occupied { background: #cbd5e1 !important; color: #94a3b8 !important; cursor: not-allowed; border: none; }
+        .seat-selected { background: #00b272 !important; color: white !important; transform: scale(1.1); box-shadow: 0 8px 20px rgba(0,178,114,0.3); z-index: 10; }
+        .seat-blocked { opacity: 0; pointer-events: none; } 
+        .seat-admin-blocked { background: #fee2e2 !important; border: 2px dashed #ef4444 !important; color: #ef4444 !important; }
+        
+        .wall-v { position: absolute; width: 8px; border-radius: 99px; z-index: 60; }
+        .win-v { background: #60a5fa; box-shadow: 0 0 10px rgba(96, 165, 250, 0.6); }
+        .door-v { background: #fb923c; box-shadow: 0 0 10px rgba(251, 146, 60, 0.6); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .animate-pop { animation: fadeIn 0.2s ease-out; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-2 overflow-x-hidden">
+
+    <div id="nav" class="w-[98%] flex justify-between items-center mb-4 mt-1 hidden">
+        <div id="admin-trigger" onclick="openAdmin()" class="glass px-4 py-2 rounded-2xl cursor-pointer shadow-sm border-white hidden">
+            <div class="flex flex-col items-start leading-tight">
+                <span id="user-display-name" class="text-[12px] font-bold text-slate-800">---</span>
+                <span id="user-display-id" class="text-[10px] text-gray-400 font-medium">ID: ---</span>
+                <span class="text-[9px] text-[#00b272] mt-1 font-bold">แผงควบคุม <i class="fa-solid fa-gear ml-1"></i></span>
+            </div>
+        </div>
+        <div id="user-info" class="glass px-4 py-2 rounded-2xl shadow-sm border-white">
+            <div class="flex flex-col items-start leading-tight">
+                <span id="student-name" class="text-[12px] font-bold text-slate-800">---</span>
+                <span id="student-id-display" class="text-[10px] text-gray-400 font-medium">ID: ---</span>
+            </div>
+        </div>
+        <button onclick="location.reload()" class="text-[10px] font-bold text-gray-400 uppercase hover:text-red-500">ออกจากระบบ</button>
+    </div>
+
+    <div id="login-page" class="mt-20 glass p-10 rounded-[2.5rem] shadow-2xl text-center w-full max-w-sm border-white animate-pop">
+        <div class="bg-[#00b272] w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 text-white text-2xl shadow-lg shadow-green-200"><i class="fa-solid fa-user-shield"></i></div>
+        <h2 class="text-xl font-bold mb-6 text-slate-800">เข้าสู่ระบบจองที่นั่ง</h2>
+        <input type="text" id="student_id_input" class="w-full bg-gray-50 border-2 border-transparent focus:border-green-400 rounded-xl py-3 text-center mb-4 outline-none transition shadow-inner" placeholder="กรอกเลขประจำตัวนักเรียน">
+        <button onclick="doLogin()" class="w-full bg-[#00b272] text-white py-4 rounded-xl font-bold shadow-lg shadow-green-100 hover:bg-[#009661] transition active:scale-95">เข้าสู่ระบบ</button>
+    </div>
+
+    <div id="main-app" class="hidden w-full max-w-[98%] animate-pop">
+        <div class="flex flex-col lg:flex-row gap-6 justify-center items-start">
+            <div class="glass p-10 rounded-[3rem] relative shadow-xl border-white w-full lg:w-auto text-center">
+                <div id="wall-elements-container"></div>
+                <div class="text-center mb-10"><p class="text-[8px] text-gray-300 tracking-[0.6em] font-bold uppercase">หน้ากระดาน / FRONT</p></div>
+                <div id="seat-map" class="grid gap-2 mx-auto justify-center"></div>
+                
+                <div class="mt-8 flex flex-wrap justify-center gap-4 border-t border-gray-100 pt-6">
+                    <div class="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase"><div class="w-3 h-3 rounded bg-blue-400"></div> หน้าต่าง</div>
+                    <div class="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase"><div class="w-3 h-3 rounded bg-orange-400"></div> ประตู</div>
+                    <div class="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase"><div class="w-3 h-3 rounded bg-white border"></div> ว่าง</div>
+                    <div class="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase"><div class="w-3 h-3 rounded bg-slate-300"></div> ไม่ว่าง</div>
+                </div>
+            </div>
+
+            <div class="w-full lg:w-60 text-center">
+                <div class="glass p-8 rounded-[2.5rem] border-white shadow-xl">
+                    <p class="text-[10px] text-gray-400 uppercase font-bold mb-1 tracking-widest">เลขที่นั่งที่เลือก</p>
+                    <div id="display-seat" class="text-6xl font-bold text-[#00b272] mb-6">--</div>
+                    <button id="confirm-btn" onclick="confirmBooking()" class="w-full bg-[#00b272] text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-100 hover:bg-[#009661] active:scale-95 transition">ยืนยันการจอง</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-panel" class="hidden fixed inset-0 z-[300] bg-[#f8fafc] overflow-y-auto p-4 md:p-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">จัดการแผนผังห้อง</h2>
+                    <p class="text-sm text-slate-400">แก้ไขจำนวนแถว/ที่นั่ง และเปิด-ปิดที่นั่ง</p>
+                </div>
+                <button onclick="saveAndCloseAdmin()" id="admin-save-btn" class="bg-[#00b272] text-white px-10 py-4 rounded-2xl font-bold shadow-xl shadow-green-100 hover:scale-105 transition">บันทึกข้อมูล</button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 glass p-10 rounded-[3rem] relative flex flex-col items-center min-h-[600px] shadow-sm border-white">
+                    <div id="admin-wall-container"></div>
+                    <div id="admin-seat-map" class="grid gap-2 mx-auto"></div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-widest">1. ตั้งค่าขนาด</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="text-[10px] block mb-1">Rows (แถว)</label><input id="inp-rows" type="number" class="w-full bg-slate-50 p-3 rounded-xl border text-center font-bold" onchange="resetLayout()"></div>
+                            <div><label class="text-[10px] block mb-1">Cols (หลัก)</label><input id="inp-cols" type="number" class="w-full bg-slate-50 p-3 rounded-xl border text-center font-bold" onchange="resetLayout()"></div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-widest">2. เพิ่มสิ่งของ</p>
+                        <div class="flex gap-2 mb-4">
+                            <button onclick="openObjModal('window')" class="flex-1 py-3 bg-blue-50 text-blue-600 rounded-xl text-[11px] font-bold">+ หน้าต่าง</button>
+                            <button onclick="openObjModal('door')" class="flex-1 py-3 bg-orange-50 text-orange-600 rounded-xl text-[11px] font-bold">+ ประตู</button>
+                        </div>
+                        <div id="obj-list" class="space-y-2 max-h-32 overflow-y-auto"></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-widest">3. แก้ไขเลขที่นั่ง</p>
+                        <div id="seat-label-list" class="space-y-2 max-h-72 overflow-y-auto"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="obj-modal" class="hidden fixed inset-0 z-[500] bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass max-w-sm w-full p-8 rounded-[2.5rem] shadow-2xl animate-pop">
+            <h3 id="obj-modal-title" class="text-xl font-bold mb-6 text-center">เพิ่มวัตถุ</h3>
+            <div class="space-y-6">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-3">เลือกด้าน</label>
+                    <div class="flex p-1 bg-slate-100 rounded-2xl">
+                        <button id="side-left" onclick="tempSide='left'; updateSideUI()" class="flex-1 py-3 rounded-xl font-bold text-sm">ซ้าย</button>
+                        <button id="side-right" onclick="tempSide='right'; updateSideUI()" class="flex-1 py-3 rounded-xl font-bold text-sm">ขวา</button>
+                    </div>
+                </div>
+                <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-3">ตำแหน่ง</label><input type="range" id="obj-pos" min="0" max="90" value="20" class="w-full accent-green-500"></div>
+                <div class="flex gap-3">
+                    <button onclick="document.getElementById('obj-modal').classList.add('hidden')" class="flex-1 py-3 font-bold text-slate-400">ยกเลิก</button>
+                    <button onclick="confirmAddObj()" class="flex-1 py-3 bg-[#00b272] text-white rounded-xl font-bold">ตกลง</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="success-modal" class="hidden fixed inset-0 z-[600] bg-black/60 backdrop-blur-xl flex items-center justify-center p-4">
+        <div class="glass max-w-[340px] w-full p-8 text-center rounded-[3rem] animate-pop shadow-2xl border-white border-2">
+            <div class="w-14 h-14 bg-[#00b272] text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-check"></i></div>
+            <h2 class="text-2xl font-bold mb-1 text-slate-800">จองสำเร็จ!</h2>
+            <p class="text-red-500 text-[10px] font-bold mb-6 uppercase italic">*** กรุณาแคปหน้าจอไว้เป็นหลักฐาน ***</p>
+            <div class="bg-slate-50 rounded-[2.5rem] p-8 shadow-inner mb-6">
+                <div id="m-seat" class="text-7xl font-bold text-[#00b272] mb-4">--</div>
+                <div class="text-center border-t pt-5">
+                    <p id="m-name" class="text-lg font-bold text-slate-800">--</p>
+                    <p id="m-id" class="text-sm text-slate-400 font-medium">--</p>
+                    <p id="m-time" class="text-[9px] text-slate-300 mt-4 italic">--</p>
+                </div>
+            </div>
+            <button onclick="closeSuccessModal()" class="w-full py-2 text-slate-400 font-bold text-[11px] uppercase">ปิด</button>
+        </div>
+    </div>
+
+    <script>
+        // --- ส่วนเชื่อมต่อ Database ---
+        const SUPABASE_URL = 'https://abgtfwjsauobbbnywdts.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_3nA8LZf5Y0C03JzCEMkYcQ_BxXEpOB0';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let userData = null, bookedSeats = [], selectedSeat = null;
+        let roomConfig = { rows: 8, cols: 6, wall_objects: [], blocked_seats: [], custom_labels: {} };
+        let tempObjType = '', tempSide = 'left';
+
+        // --- ส่วน Login ---
+        async function doLogin() {
+            const sid = document.getElementById('student_id_input').value.trim();
+            const { data, error } = await _supabase.from('settings').select('*').eq('student_id', sid).single();
+            
+            if (error || !data) return alert("ไม่พบข้อมูลนักเรียนในระบบ");
+            
+            userData = data;
+
+            // ตรวจสอบสิทธิ์และอัปเดต UI หัวเว็บ
+            if (userData.role === 'admin') {
+                document.getElementById('admin-trigger').classList.remove('hidden');
+                document.getElementById('user-info').classList.add('hidden');
+                document.getElementById('user-display-name').innerText = userData.name;
+                document.getElementById('user-display-id').innerText = "ID: " + userData.student_id;
+            } else {
+                document.getElementById('admin-trigger').classList.add('hidden');
+                document.getElementById('user-info').classList.remove('hidden');
+                document.getElementById('student-name').innerText = userData.name;
+                document.getElementById('student-id-display').innerText = "ID: " + userData.student_id;
+            }
+
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('nav').classList.remove('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            loadData();
+        }
+
+        // --- ดึงข้อมูลโครงสร้างห้องและข้อมูลการจอง ---
+        async function loadData() {
+            // ใช้ชื่อตาราง 'room' ตามที่คุณต้องการ
+            const { data: config } = await _supabase.from('room').select('*').eq('id', 1).single();
+            if(config) roomConfig = { ...roomConfig, ...config };
+            
+            const { data: bookings } = await _supabase.from('bookings').select('seat_number');
+            bookedSeats = bookings ? bookings.map(b => b.seat_number) : [];
+            
+            render('seat-map', 'wall-elements-container', false);
+        }
+
+        // --- ระบบวาดที่นั่ง ---
+        function render(mapId, wallId, isAdmin) {
+            const container = document.getElementById(mapId);
+            container.style.gridTemplateColumns = `repeat(${roomConfig.cols}, 45px)`;
+            container.innerHTML = '';
+            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+            if (isAdmin) document.getElementById('seat-label-list').innerHTML = '';
+
+            for(let r=0; r<roomConfig.rows; r++) {
+                for(let c=0; c<roomConfig.cols; c++) {
+                    const defaultID = alphabet[r] + (c+1);
+                    const label = roomConfig.custom_labels[defaultID] || defaultID;
+                    const isBooked = bookedSeats.includes(label);
+                    const isBlocked = roomConfig.blocked_seats.includes(defaultID);
+                    
+                    const div = document.createElement('div');
+                    div.style.height = '45px';
+                    div.innerText = label;
+
+                    if (isAdmin) {
+                        div.className = `seat ${isBlocked ? 'seat-admin-blocked' : 'seat-vacant border'}`;
+                        div.onclick = () => {
+                            if(roomConfig.blocked_seats.includes(defaultID)) roomConfig.blocked_seats = roomConfig.blocked_seats.filter(x => x !== defaultID);
+                            else roomConfig.blocked_seats.push(defaultID);
+                            render('admin-seat-map', 'admin-wall-container', true);
+                        };
+                        // ฟิลด์แก้ชื่อที่นั่งใน Admin
+                        const row = document.createElement('div');
+                        row.className = "flex gap-2 bg-slate-50 p-2 rounded-lg border text-xs";
+                        row.innerHTML = `<span class="w-8 font-bold">${defaultID}</span><input type="text" value="${label}" class="flex-1 p-1" onchange="roomConfig.custom_labels['${defaultID}'] = this.value; render('admin-seat-map', 'admin-wall-container', true);">`;
+                        document.getElementById('seat-label-list').appendChild(row);
+                    } else {
+                        if(isBlocked) div.className = "seat seat-blocked";
+                        else {
+                            div.className = `seat ${isBooked ? 'seat-occupied' : 'seat-vacant border'}`;
+                            if(!isBooked) div.onclick = () => {
+                                document.querySelectorAll('#seat-map .seat').forEach(s => s.classList.remove('seat-selected'));
+                                div.classList.add('seat-selected');
+                                selectedSeat = label;
+                                document.getElementById('display-seat').innerText = label;
+                            };
+                        }
+                    }
+                    container.appendChild(div);
+                }
+            }
+            renderWalls(wallId);
+        }
+
+        function renderWalls(targetId) {
+            const container = document.getElementById(targetId);
+            if(!container) return; container.innerHTML = '';
+            roomConfig.wall_objects.forEach((o) => {
+                const w = document.createElement('div');
+                w.className = `wall-v ${o.type === 'window' ? 'win-v' : 'door-v'}`;
+                w.style.top = o.top + '%';
+                w.style.height = o.type === 'window' ? '50px' : '90px';
+                if(o.side === 'left') w.style.left = '-12px'; else w.style.right = '-12px';
+                container.appendChild(w);
+            });
+        }
+
+        // --- ส่วน Admin Functions ---
+        function openAdmin() {
+            if (userData.role !== 'admin') return alert("Access Denied");
+            document.getElementById('admin-panel').classList.remove('hidden');
+            document.getElementById('inp-rows').value = roomConfig.rows;
+            document.getElementById('inp-cols').value = roomConfig.cols;
+            resetLayout();
+        }
+
+        function resetLayout() {
+            roomConfig.rows = parseInt(document.getElementById('inp-rows').value) || 1;
+            roomConfig.cols = parseInt(document.getElementById('inp-cols').value) || 1;
+            render('admin-seat-map', 'admin-wall-container', true);
+            const list = document.getElementById('obj-list');
+            list.innerHTML = '';
+            roomConfig.wall_objects.forEach((o, i) => {
+                const item = document.createElement('div');
+                item.className = "flex justify-between p-2 bg-slate-50 rounded border text-[10px]";
+                item.innerHTML = `<span>${o.type === 'window' ? 'หน้าต่าง' : 'ประตู'} (${o.side})</span><button onclick="roomConfig.wall_objects.splice(${i},1);resetLayout()"><i class="fa-solid fa-trash"></i></button>`;
+                list.appendChild(item);
+            });
+        }
+
+        async function saveAndCloseAdmin() {
+            const btn = document.getElementById('admin-save-btn');
+            btn.innerText = "กำลังบันทึก...";
+            // บันทึกลงตาราง 'room'
+            await _supabase.from('room').update(roomConfig).eq('id', 1);
+            document.getElementById('admin-panel').classList.add('hidden');
+            btn.innerText = "บันทึกข้อมูล";
+            loadData();
+        }
+
+        function openObjModal(type) {
+            tempObjType = type;
+            document.getElementById('obj-modal').classList.remove('hidden');
+            updateSideUI();
+        }
+
+        function updateSideUI() {
+            document.getElementById('side-left').className = tempSide === 'left' ? "flex-1 py-3 rounded-xl font-bold bg-white text-[#00b272]" : "flex-1 py-3 rounded-xl font-bold text-slate-400";
+            document.getElementById('side-right').className = tempSide === 'right' ? "flex-1 py-3 rounded-xl font-bold bg-white text-[#00b272]" : "flex-1 py-3 rounded-xl font-bold text-slate-400";
+        }
+
+        function confirmAddObj() {
+            const top = document.getElementById('obj-pos').value;
+            roomConfig.wall_objects.push({ type: tempObjType, side: tempSide, top: parseInt(top) });
+            document.getElementById('obj-modal').classList.add('hidden');
+            resetLayout();
+        }
+
+        // --- ระบบบันทึกการจอง ---
+        async function confirmBooking() {
+            if(!selectedSeat) return alert("เลือกที่นั่งก่อนครับ");
+            const btn = document.getElementById('confirm-btn');
+            btn.disabled = true;
+
+            const { data: check } = await _supabase.from('bookings').select('id').eq('student_id', userData.student_id).single();
+            if(check) { alert("คุณจองไปแล้ว!"); btn.disabled = false; return; }
+
+            const timeNow = new Date().toLocaleString('th-TH');
+            const { error } = await _supabase.from('bookings').insert([{ 
+                student_name: userData.name, student_id: userData.student_id, seat_number: selectedSeat 
+            }]);
+
+            if(!error) {
+                document.getElementById('m-seat').innerText = selectedSeat;
+                document.getElementById('m-name').innerText = userData.name;
+                document.getElementById('m-id').innerText = "ID: " + userData.student_id;
+                document.getElementById('m-time').innerText = "จองเมื่อ: " + timeNow;
+                document.getElementById('success-modal').classList.remove('hidden');
+            } else { alert("จองไม่สำเร็จ"); btn.disabled = false; }
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('success-modal').classList.add('hidden');
+            selectedSeat = null; document.getElementById('display-seat').innerText = "--";
+            document.getElementById('confirm-btn').disabled = false;
+            loadData();
+        }
+    </script>
+</body>
+</html>
