@@ -5,14 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>thaiticketclassroom</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght=300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Kanit', sans-serif; background-color: #f0f7f2; }
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.5); }
         
-        /* ปรับ Seat ให้ยืดหยุ่น */
         .seat { 
             transition: all 0.2s ease; 
             cursor: pointer; 
@@ -32,8 +31,7 @@
         .seat-blocked { opacity: 0; pointer-events: none; } 
         .seat-admin-blocked { background: #fee2e2 !important; border: 2px dashed #ef4444 !important; color: #ef4444 !important; }
         
-        /* ตกแต่ง Scrollbar ให้ดูสวยขึ้น */
-        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
@@ -44,10 +42,14 @@
 
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .animate-pop { animation: fadeIn 0.2s ease-out; }
+
+        .menu-card { transition: all 0.3s ease; }
+        .menu-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center p-2 overflow-x-hidden">
 
+    <!-- Navbar -->
     <div id="nav" class="w-full max-w-4xl flex justify-between items-center mb-4 mt-1 px-2 hidden">
         <div id="admin-trigger" onclick="openAdmin()" class="glass px-4 py-2 rounded-2xl cursor-pointer shadow-sm border-white hidden">
             <div class="flex flex-col items-start leading-tight">
@@ -62,100 +64,246 @@
                 <span id="student-id-display" class="text-[10px] text-gray-400 font-medium">ID: ---</span>
             </div>
         </div>
-        <button onclick="location.reload()" class="text-[10px] font-bold text-gray-400 uppercase hover:text-red-500">ออกจากระบบ</button>
+        <button onclick="logout()" class="text-[10px] font-bold text-gray-400 uppercase hover:text-red-500">ออกจากระบบ</button>
     </div>
 
+    <!-- Login Page -->
     <div id="login-page" class="mt-10 md:mt-20 glass p-8 md:p-10 rounded-[2.5rem] shadow-2xl text-center w-full max-w-sm border-white animate-pop mx-4">
         <div class="bg-[#00b272] w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 text-white text-2xl shadow-lg shadow-green-200"><i class="fa-solid fa-user-shield"></i></div>
-        <h2 class="text-xl font-bold mb-6 text-slate-800">เข้าสู่ระบบจองที่นั่ง</h2>
+        <h2 class="text-xl font-bold mb-6 text-slate-800">เข้าสู่ระบบห้องเรียน</h2>
         <input type="text" id="student_id_input" class="w-full bg-gray-50 border-2 border-transparent focus:border-green-400 rounded-xl py-3 text-center mb-4 outline-none transition shadow-inner" placeholder="กรอกเลขประจำตัวนักเรียน">
         <button onclick="doLogin()" class="w-full bg-[#00b272] text-white py-4 rounded-xl font-bold shadow-lg shadow-green-100 hover:bg-[#009661] transition active:scale-95">เข้าสู่ระบบ</button>
     </div>
 
+    <!-- Landing Menu Page -->
+    <div id="landing-page" class="hidden w-full max-w-4xl px-4 py-8 animate-pop">
+        <div class="text-center mb-10">
+            <h1 class="text-3xl font-bold text-slate-800">ยินดีต้อนรับ</h1>
+            <p id="landing-name" class="text-lg text-[#00b272] font-medium mt-2">---</p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div onclick="goToPage('main-app'); loadSeatData();" class="menu-card glass p-6 rounded-3xl cursor-pointer text-center">
+                <div class="w-12 h-12 mx-auto bg-green-100 text-green-600 rounded-2xl flex items-center justify-center text-2xl mb-4"><i class="fa-solid fa-chair"></i></div>
+                <h3 class="font-bold text-sm">จองที่นั่ง</h3>
+            </div>
+            <div onclick="goToPage('duty-page'); loadDutyData();" class="menu-card glass p-6 rounded-3xl cursor-pointer text-center">
+                <div class="w-12 h-12 mx-auto bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-2xl mb-4"><i class="fa-solid fa-calendar-check"></i></div>
+                <h3 class="font-bold text-sm">เวรประจำวัน</h3>
+            </div>
+            <div onclick="goToPage('homework-page'); loadHomeworkData();" class="menu-card glass p-6 rounded-3xl cursor-pointer text-center">
+                <div class="w-12 h-12 mx-auto bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mb-4"><i class="fa-solid fa-book-bookmark"></i></div>
+                <h3 class="font-bold text-sm">การบ้าน</h3>
+            </div>
+            <div onclick="goToPage('fund-page'); loadFundData();" class="menu-card glass p-6 rounded-3xl cursor-pointer text-center">
+                <div class="w-12 h-12 mx-auto bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-2xl mb-4"><i class="fa-solid fa-wallet"></i></div>
+                <h3 class="font-bold text-sm">กองทุนห้อง</h3>
+            </div>
+            <div onclick="goToPage('chat-page'); initChatSystem();" class="menu-card glass p-6 rounded-3xl cursor-pointer text-center col-span-2 md:col-span-1">
+                <div class="w-12 h-12 mx-auto bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-2xl mb-4"><i class="fa-solid fa-comments"></i></div>
+                <h3 class="font-bold text-sm">แชท</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seat Booking Page -->
     <div id="main-app" class="hidden w-full max-w-6xl animate-pop px-2">
+        <div class="flex justify-between items-center mb-6 max-w-4xl mx-auto">
+            <button onclick="goToPage('landing-page')" class="flex items-center gap-2 text-[#00b272] font-bold text-sm bg-white px-4 py-2 rounded-xl shadow-sm border"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
+            <h2 class="text-lg font-bold text-slate-700">ระบบจองที่นั่ง</h2>
+        </div>
         <div class="flex flex-col lg:flex-row gap-6 justify-center items-start">
-            
             <div class="glass p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] relative shadow-xl border-white w-full lg:flex-1 text-center">
                 <div id="wall-elements-container"></div>
                 <div class="text-center mb-8"><p class="text-[8px] text-gray-300 tracking-[0.6em] font-bold uppercase">หน้ากระดาน / FRONT</p></div>
-                
                 <div class="overflow-x-auto pb-4 custom-scrollbar">
                     <div id="seat-map" class="grid gap-2 mx-auto min-w-fit px-2"></div>
                 </div>
-                
-                <div class="mt-8 flex flex-wrap justify-center gap-3 md:gap-4 border-t border-gray-100 pt-6">
-                    <div class="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase"><div class="w-3 h-3 rounded bg-blue-400"></div> หน้าต่าง</div>
-                    <div class="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase"><div class="w-3 h-3 rounded bg-orange-400"></div> ประตู</div>
-                    <div class="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase"><div class="w-3 h-3 rounded bg-white border"></div> ว่าง</div>
-                    <div class="flex items-center gap-2 text-[9px] font-bold text-gray-400 uppercase"><div class="w-3 h-3 rounded bg-slate-300"></div> ไม่ว่าง</div>
-                </div>
             </div>
-
             <div class="w-full lg:w-64 text-center">
                 <div class="glass p-8 rounded-[2.5rem] border-white shadow-xl">
                     <p class="text-[10px] text-gray-400 uppercase font-bold mb-1 tracking-widest">เลขที่นั่งที่เลือก</p>
                     <div id="display-seat" class="text-6xl font-bold text-[#00b272] mb-6">--</div>
-                    <button id="confirm-btn" onclick="confirmBooking()" class="w-full bg-[#00b272] text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-100 hover:bg-[#009661] active:scale-95 transition">ยืนยันการจอง</button>
+                    <button id="confirm-btn" onclick="confirmBooking()" class="w-full bg-[#00b272] text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-100 hover:bg-[#009661] transition">ยืนยันการจอง</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Duty Page -->
+    <div id="duty-page" class="hidden w-full max-w-4xl animate-pop px-2">
+        <div class="flex justify-between items-center mb-6">
+            <button onclick="goToPage('landing-page')" class="flex items-center gap-2 text-[#00b272] font-bold text-sm bg-white px-4 py-2 rounded-xl shadow-sm border"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
+            <h2 class="text-xl font-bold text-slate-700">จัดเวรประจำวัน</h2>
+        </div>
+        <div id="duty-grid" class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8"></div>
+    </div>
+
+    <!-- Homework Page -->
+    <div id="homework-page" class="hidden w-full max-w-5xl animate-pop px-2 mb-10">
+        <div class="flex justify-between items-center mb-6">
+            <button onclick="goToPage('landing-page')" class="flex items-center gap-2 text-[#00b272] font-bold text-sm bg-white px-4 py-2 rounded-xl shadow-sm border"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
+            <h2 class="text-xl font-bold text-slate-700">การบ้าน</h2>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <div class="glass p-6 rounded-3xl border-white shadow-lg space-y-4">
+                <p class="text-sm font-bold text-slate-700"><i class="fa-solid fa-pen-to-square text-[#00b272] mr-1"></i> แจ้งการบ้าน</p>
+                <div><input id="hw-subject" type="text" placeholder="วิชา เช่น คณิตศาสตร์" class="w-full bg-gray-50 border p-2.5 rounded-xl text-sm outline-none"></div>
+                <div><textarea id="hw-title" placeholder="รายละเอียดภารกิจ..." class="w-full bg-gray-50 border p-2.5 rounded-xl text-sm outline-none h-20"></textarea></div>
+                <div><input id="hw-deadline" type="date" class="w-full bg-gray-50 border p-2.5 rounded-xl text-sm outline-none"></div>
+                <button onclick="addHomework()" class="w-full bg-[#00b272] text-white py-3 rounded-xl text-xs font-bold shadow-lg">เพิ่มการบ้าน</button>
+            </div>
+            <div class="lg:col-span-2 space-y-4">
+                <p class="text-sm font-bold text-slate-700"><i class="fa-solid fa-list-check text-blue-500 mr-1"></i> งานที่ต้องทำของคุณ</p>
+                <div id="homework-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fund Page -->
+    <div id="fund-page" class="hidden w-full max-w-4xl animate-pop px-2 mb-10">
+        <div class="flex justify-between items-center mb-6">
+            <button onclick="goToPage('landing-page')" class="flex items-center gap-2 text-[#00b272] font-bold text-sm bg-white px-4 py-2 rounded-xl shadow-sm border"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
+            <h2 class="text-xl font-bold text-slate-700">กองทุนส่วนกลางห้องเรียน</h2>
+        </div>
+        <div class="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-[2rem] p-6 text-white shadow-xl mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <p class="text-xs opacity-80 uppercase tracking-wider font-medium">ยอดเงินกองทุนสะสมรวมทั้งหมด</p>
+                <h1 id="total-fund-amount" class="text-4xl font-bold mt-1">0.00 <span class="text-lg font-normal">บาท</span></h1>
+            </div>
+            <div class="flex gap-4 bg-white/10 px-4 py-3 rounded-2xl text-center backdrop-blur-sm">
+                <div><p class="text-[10px] opacity-80">สแกนจ่ายสำเร็จ</p><p id="count-qr-payment" class="font-bold text-base">0 คน</p></div>
+                <div class="border-l border-white/20 pl-4"><p class="text-[10px] opacity-80">จ่ายเงินสดแล้ว</p><p id="count-cash-payment" class="font-bold text-base">0 คน</p></div>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <div class="md:col-span-1 glass p-6 rounded-3xl border-white shadow-lg text-center space-y-4">
+                <p class="text-sm font-bold text-slate-700 border-b pb-2">ช่องทางการชำระเงินของคุณ</p>
+                <div id="user-payment-status-box"></div>
+            </div>
+            <div class="md:col-span-2 glass p-6 rounded-3xl border-white shadow-lg space-y-4">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <p class="text-sm font-bold text-slate-700"><i class="fa-solid fa-clipboard-list text-emerald-500 mr-1"></i> ตรวจสอบรายชื่อการสมทบทุน</p>
+                    <span id="fund-target-title" class="text-xs bg-emerald-50 border text-emerald-600 px-3 py-1 rounded-xl font-bold">---</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="text-gray-400 border-b">
+                                <th class="pb-2 font-medium">รหัสประจำตัว</th>
+                                <th class="pb-2 font-medium">ชื่อ-นามสกุล</th>
+                                <th class="pb-2 font-medium text-center">จำนวนเงิน</th>
+                                <th class="pb-2 font-medium text-right">รูปแบบ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payment-history-rows" class="divide-y text-slate-700 font-medium"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Classroom Chat Page -->
+    <div id="chat-page" class="hidden w-full max-w-3xl animate-pop px-2 flex flex-col h-[calc(100vh-100px)]">
+        <div class="flex justify-between items-center mb-4 shrink-0">
+            <button onclick="goToPage('landing-page')" class="flex items-center gap-2 text-[#00b272] font-bold text-sm bg-white px-4 py-2 rounded-xl shadow-sm border"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
+            <h2 class="text-xl font-bold text-slate-700"><i class="fa-solid fa-comments text-purple-500 mr-1"></i> แชทกลุ่ม</h2>
+        </div>
+        
+        <div class="glass rounded-[2rem] shadow-xl border-white overflow-hidden flex flex-col flex-1">
+            <div id="chat-messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-slate-50/50">
+                <div class="text-center text-gray-400 text-xs py-10">กำลังโหลดข้อความ...</div>
+            </div>
+
+            <div id="file-preview-area" class="hidden bg-purple-50/80 px-4 py-2 border-t flex justify-between items-center text-xs text-purple-700 font-medium animate-pop">
+                <span id="file-preview-name" class="truncate max-w-md"></span>
+                <button onclick="clearSelectedFile()" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-circle-xmark text-base"></i></button>
+            </div>
+
+            <div class="p-3 bg-white border-t flex items-center gap-2 shrink-0">
+                <input type="file" id="chat-file-input" class="hidden" onchange="handleFileSelection()">
+                <button onclick="document.getElementById('chat-file-input').click()" class="w-10 h-10 bg-slate-100 hover:bg-purple-100 text-slate-500 hover:text-purple-600 rounded-xl flex items-center justify-center transition shrink-0" title="แนบรูปภาพหรือไฟล์">
+                    <i class="fa-solid fa-paperclip text-lg"></i>
+                </button>
+                <input type="text" id="chat-text-input" placeholder="พิมพ์ข้อความที่นี่..." class="flex-1 bg-slate-50 border border-slate-200 focus:border-purple-400 rounded-xl py-2.5 px-4 outline-none text-sm transition" onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                <button id="chat-send-btn" onclick="sendChatMessage()" class="w-10 h-10 bg-purple-600 hover:bg-purple-700 text-white rounded-xl flex items-center justify-center shadow-md transition shrink-0">
+                    <i class="fa-solid fa-paper-plane text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
     <div id="admin-panel" class="hidden fixed inset-0 z-[300] bg-[#f8fafc] overflow-y-auto p-4 md:p-8">
         <div class="max-w-6xl mx-auto">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
-                    <h2 class="text-2xl font-bold text-slate-800">จัดการแผนผังห้อง</h2>
-                    <p class="text-sm text-slate-400">แก้ไขจำนวนแถว/ที่นั่ง และเปิด-ปิดที่นั่ง</p>
+                    <h2 class="text-2xl font-bold text-slate-800">จัดการระบบห้องเรียน (Admin)</h2>
+                    <p class="text-sm text-slate-400">แก้ไขผัง, คุมการจ่ายเงินสด และตั้งค่ากองทุน</p>
                 </div>
-                <button onclick="saveAndCloseAdmin()" id="admin-save-btn" class="w-full md:w-auto bg-[#00b272] text-white px-10 py-4 rounded-2xl font-bold shadow-xl shadow-green-100 hover:scale-105 transition">บันทึกข้อมูล</button>
+                <div class="flex w-full md:w-auto gap-3">
+                    <button onclick="document.getElementById('admin-panel').classList.add('hidden'); goToPage('landing-page');" class="flex-1 md:flex-none bg-slate-200 text-slate-600 px-6 py-4 rounded-2xl font-bold">กลับหน้าหลัก</button>
+                    <button onclick="saveAndCloseAdmin()" id="admin-save-btn" class="flex-[2] md:flex-none bg-[#00b272] text-white px-10 py-4 rounded-2xl font-bold shadow-xl">บันทึกข้อมูลทั้งหมด</button>
+                </div>
             </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-2 glass p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] relative flex flex-col items-center min-h-[400px] shadow-sm border-white overflow-hidden">
+                <div class="lg:col-span-2 glass p-6 md:p-10 rounded-[2.5rem] relative min-h-[400px] flex flex-col items-center overflow-hidden">
                     <div id="admin-wall-container"></div>
                     <div class="overflow-x-auto w-full pb-4 custom-scrollbar">
                         <div id="admin-seat-map" class="grid gap-2 mx-auto min-w-fit px-2"></div>
                     </div>
                 </div>
-
                 <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b pb-2">💸 จัดการระบบกองทุนห้อง</p>
+                        <div>
+                            <label class="text-[10px] block mb-1 font-bold text-slate-500">หัวข้อเก็บเงินรอบนี้</label>
+                            <input id="adm-fund-title" type="text" class="w-full bg-slate-50 p-2.5 rounded-xl border text-sm" placeholder="ค่าบอร์ดนิทรรศการ ม.3">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[10px] block mb-1 font-bold text-slate-500">จำนวนเงินต่อคน (บาท)</label>
+                                <input id="adm-fund-amount" type="number" class="w-full bg-slate-50 p-2.5 rounded-xl border text-center font-bold text-sm" placeholder="20">
+                            </div>
+                            <div>
+                                <label class="text-[10px] block mb-1 font-bold text-slate-500">เบอร์พร้อมเพย์รับเงิน</label>
+                                <input id="adm-fund-pp" type="text" class="w-full bg-slate-50 p-2.5 rounded-xl border text-center text-sm" placeholder="095xxxxxxx">
+                            </div>
+                        </div>
+                        <button onclick="saveFundConfig()" class="w-full bg-emerald-600 text-white text-xs py-2.5 rounded-xl font-bold shadow">อัปเดตแคมเปญเก็บเงิน</button>
+                        <div class="border-t pt-4">
+                            <p class="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-2">🟢 บันทึกคนจ่าย "เงินสด" (สำหรับแอดมิน)</p>
+                            <div class="space-y-2">
+                                <input id="cash-student-id" type="text" placeholder="รหัสนักเรียน เช่น 14599" class="w-full bg-slate-50 p-2 text-xs border rounded-xl" oninput="fetchStudentNameForCash(this.value)">
+                                <div id="cash-name-preview" class="text-[11px] text-slate-500 px-2 font-medium bg-slate-50 py-1.5 rounded-lg border border-dashed border-slate-200 min-h-[28px] flex items-center">พิมพ์รหัสเพื่อค้นหาชื่อ...</div>
+                                <button onclick="addCashPaymentByAdmin()" class="w-full bg-orange-500 text-white text-xs py-2 rounded-xl font-bold shadow">บันทึกรับเงินสด</button>
+                            </div>
+                        </div>
+                    </div>
                     <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-widest">1. ตั้งค่าขนาด</p>
+                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-widest">⚙️ ตั้งค่าผังที่นั่ง</p>
                         <div class="grid grid-cols-2 gap-4">
                             <div><label class="text-[10px] block mb-1">Rows (แถว)</label><input id="inp-rows" type="number" class="w-full bg-slate-50 p-3 rounded-xl border text-center font-bold" onchange="resetLayout()"></div>
                             <div><label class="text-[10px] block mb-1">Cols (หลัก)</label><input id="inp-cols" type="number" class="w-full bg-slate-50 p-3 rounded-xl border text-center font-bold" onchange="resetLayout()"></div>
                         </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-widest">2. เพิ่มสิ่งของ</p>
-                        <div class="flex gap-2 mb-4">
-                            <button onclick="openObjModal('window')" class="flex-1 py-3 bg-blue-50 text-blue-600 rounded-xl text-[11px] font-bold">+ หน้าต่าง</button>
-                            <button onclick="openObjModal('door')" class="flex-1 py-3 bg-orange-50 text-orange-600 rounded-xl text-[11px] font-bold">+ ประตู</button>
-                        </div>
-                        <div id="obj-list" class="space-y-2 max-h-32 overflow-y-auto"></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-widest">3. แก้ไขเลขที่นั่ง</p>
-                        <div id="seat-label-list" class="space-y-2 max-h-72 overflow-y-auto"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Modals -->
     <div id="obj-modal" class="hidden fixed inset-0 z-[500] bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
         <div class="glass max-w-sm w-full p-8 rounded-[2.5rem] shadow-2xl animate-pop">
             <h3 class="text-xl font-bold mb-6 text-center">เพิ่มวัตถุ</h3>
             <div class="space-y-6">
                 <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-3">เลือกด้าน</label>
                     <div class="flex p-1 bg-slate-100 rounded-2xl">
                         <button id="side-left" onclick="tempSide='left'; updateSideUI()" class="flex-1 py-3 rounded-xl font-bold text-sm">ซ้าย</button>
                         <button id="side-right" onclick="tempSide='right'; updateSideUI()" class="flex-1 py-3 rounded-xl font-bold text-sm">ขวา</button>
                     </div>
                 </div>
-                <div><label class="text-[10px] font-bold text-slate-400 uppercase block mb-3">ตำแหน่ง</label><input type="range" id="obj-pos" min="0" max="90" value="20" class="w-full accent-green-500"></div>
+                <div><input type="range" id="obj-pos" min="0" max="90" value="20" class="w-full accent-green-500"></div>
                 <div class="flex gap-3">
                     <button onclick="document.getElementById('obj-modal').classList.add('hidden')" class="flex-1 py-3 font-bold text-slate-400">ยกเลิก</button>
                     <button onclick="confirmAddObj()" class="flex-1 py-3 bg-[#00b272] text-white rounded-xl font-bold">ตกลง</button>
@@ -165,16 +313,14 @@
     </div>
 
     <div id="success-modal" class="hidden fixed inset-0 z-[600] bg-black/60 backdrop-blur-xl flex items-center justify-center p-4">
-        <div class="glass max-w-[340px] w-full p-6 md:p-8 text-center rounded-[3rem] animate-pop shadow-2xl border-white border-2">
+        <div class="glass max-w-[340px] w-full p-6 text-center rounded-[3rem] animate-pop shadow-2xl border-white border-2">
             <div class="w-14 h-14 bg-[#00b272] text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-check"></i></div>
             <h2 class="text-2xl font-bold mb-1 text-slate-800">จองสำเร็จ!</h2>
-            <p class="text-red-500 text-[10px] font-bold mb-6 uppercase italic">*** กรุณาแคปหน้าจอไว้เป็นหลักฐาน ***</p>
-            <div class="bg-slate-50 rounded-[2.5rem] p-6 md:p-8 shadow-inner mb-6">
-                <div id="m-seat" class="text-6xl md:text-7xl font-bold text-[#00b272] mb-4">--</div>
+            <div class="bg-slate-50 rounded-[2.5rem] p-6 mb-6">
+                <div id="m-seat" class="text-6xl font-bold text-[#00b272] mb-4">--</div>
                 <div class="text-center border-t pt-5">
                     <p id="m-name" class="text-lg font-bold text-slate-800">--</p>
                     <p id="m-id" class="text-sm text-slate-400 font-medium">--</p>
-                    <p id="m-time" class="text-[9px] text-slate-300 mt-4 italic">--</p>
                 </div>
             </div>
             <button onclick="closeSuccessModal()" class="w-full py-2 text-slate-400 font-bold text-[11px] uppercase">ปิด</button>
@@ -186,18 +332,56 @@
         const SUPABASE_KEY = 'sb_publishable_3nA8LZf5Y0C03JzCEMkYcQ_BxXEpOB0';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let userData = null, bookedSeats = [], selectedSeat = null;
-        let roomConfig = { rows: 8, cols: 6, wall_objects: [], blocked_seats: [], custom_labels: {} };
+        let userData = null;
+        let bookedSeats = [];
+        let selectedSeat = null;
+        let roomConfig = { id: 1, rows: 8, cols: 6, wall_objects: [], blocked_seats: [], custom_labels: {} };
         let tempObjType = '', tempSide = 'left';
+        
+        let dutiesConfig = [];
+        let dutyRegistrations = [];
+        
+        let homeworkList = [];
+        let completedHomeworkIds = [];
+
+        let currentFundConfig = null;
+        let paymentList = [];
+        let resolvedCashStudentName = ""; 
+
+        let selectedChatFile = null;
+        let chatSubscription = null;
+
+        window.onload = () => {
+            const savedSession = localStorage.getItem('thaiticket_session');
+            if (savedSession) {
+                userData = JSON.parse(savedSession);
+                showNav();
+                goToPage('landing-page');
+            }
+        };
 
         async function doLogin() {
             const sid = document.getElementById('student_id_input').value.trim();
             if(!sid) return alert("กรุณากรอกรหัสประจำตัว");
             
-            const { data, error } = await _supabase.from('settings').select('*').eq('student_id', sid).single();
+            const { data, error } = await _supabase.from('settings').select('*').eq('student_id', sid).maybeSingle();
             if (error || !data) return alert("ไม่พบข้อมูลนักเรียนในระบบ");
             
             userData = data;
+            localStorage.setItem('thaiticket_session', JSON.stringify(userData));
+            showNav();
+            goToPage('landing-page');
+        }
+
+        function logout() {
+            localStorage.removeItem('thaiticket_session');
+            userData = null;
+            document.getElementById('nav').classList.add('hidden');
+            if(chatSubscription) _supabase.removeChannel(chatSubscription);
+            goToPage('login-page');
+        }
+
+        function showNav() {
             if (userData.role === 'admin') {
                 document.getElementById('admin-trigger').classList.remove('hidden');
                 document.getElementById('user-info').classList.add('hidden');
@@ -209,31 +393,46 @@
                 document.getElementById('student-name').innerText = userData.name;
                 document.getElementById('student-id-display').innerText = "ID: " + userData.student_id;
             }
-
-            document.getElementById('login-page').classList.add('hidden');
             document.getElementById('nav').classList.remove('hidden');
-            document.getElementById('main-app').classList.remove('hidden');
-            loadData();
         }
 
-        async function loadData() {
-            const { data: config } = await _supabase.from('room').select('*').eq('id', 1).single();
-            if(config) roomConfig = { ...roomConfig, ...config };
-            
-            const { data: bookings } = await _supabase.from('bookings').select('seat_number');
-            bookedSeats = bookings ? bookings.map(b => b.seat_number) : [];
-            
-            render('seat-map', 'wall-elements-container', false);
+        function goToPage(id) {
+            ['login-page', 'landing-page', 'main-app', 'duty-page', 'homework-page', 'fund-page', 'chat-page', 'admin-panel'].forEach(p => {
+                if(document.getElementById(p)) document.getElementById(p).classList.add('hidden');
+            });
+            document.getElementById(id).classList.remove('hidden');
+            if(id === 'landing-page' && userData) {
+                document.getElementById('landing-name').innerText = userData.name;
+            }
+            if (id !== 'chat-page' && chatSubscription) {
+                _supabase.removeChannel(chatSubscription);
+                chatSubscription = null;
+            }
+        }
+
+        // --- SEAT BOOKING SYSTEM ---
+        async function loadSeatData() {
+            try {
+                const { data: config } = await _supabase.from('room').select('*').eq('id', 1).maybeSingle();
+                if(config) {
+                    roomConfig = {
+                        id: 1, rows: config.rows || 8, cols: config.cols || 6,
+                        wall_objects: config.wall_objects || [], blocked_seats: config.blocked_seats || [],
+                        custom_labels: config.custom_labels || {}
+                    };
+                }
+                const { data: bookings } = await _supabase.from('bookings').select('seat_number');
+                bookedSeats = bookings ? bookings.map(b => b.seat_number) : [];
+                render('seat-map', 'wall-elements-container', false);
+            } catch(err) { console.error(err); }
         }
 
         function render(mapId, wallId, isAdmin) {
             const container = document.getElementById(mapId);
-            // ปรับขนาดที่นั่งให้พอดีกับจอ (40px - 50px)
+            if(!container) return;
             container.style.gridTemplateColumns = `repeat(${roomConfig.cols}, minmax(40px, 55px))`;
             container.innerHTML = '';
             const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-            if (isAdmin) document.getElementById('seat-label-list').innerHTML = '';
 
             for(let r=0; r<roomConfig.rows; r++) {
                 for(let c=0; c<roomConfig.cols; c++) {
@@ -245,22 +444,11 @@
                     const div = document.createElement('div');
                     div.innerText = label;
 
-                    if (isAdmin) {
-                        div.className = `seat ${isBlocked ? 'seat-admin-blocked' : 'seat-vacant border'}`;
-                        div.onclick = () => {
-                            if(roomConfig.blocked_seats.includes(defaultID)) roomConfig.blocked_seats = roomConfig.blocked_seats.filter(x => x !== defaultID);
-                            else roomConfig.blocked_seats.push(defaultID);
-                            render('admin-seat-map', 'admin-wall-container', true);
-                        };
-                        const row = document.createElement('div');
-                        row.className = "flex gap-2 bg-slate-50 p-2 rounded-lg border text-xs";
-                        row.innerHTML = `<span class="w-8 font-bold">${defaultID}</span><input type="text" value="${label}" class="flex-1 p-1" onchange="roomConfig.custom_labels['${defaultID}'] = this.value; render('admin-seat-map', 'admin-wall-container', true);">`;
-                        document.getElementById('seat-label-list').appendChild(row);
-                    } else {
-                        if(isBlocked) div.className = "seat seat-blocked";
-                        else {
-                            div.className = `seat ${isBooked ? 'seat-occupied' : 'seat-vacant border'}`;
-                            if(!isBooked) div.onclick = () => {
+                    if(isBlocked) div.className = "seat seat-blocked";
+                    else {
+                        div.className = `seat ${isBooked ? 'seat-occupied' : 'seat-vacant border'}`;
+                        if(!isBooked && !isAdmin) {
+                            div.onclick = () => {
                                 document.querySelectorAll('#seat-map .seat').forEach(s => s.classList.remove('seat-selected'));
                                 div.classList.add('seat-selected');
                                 selectedSeat = label;
@@ -277,6 +465,7 @@
         function renderWalls(targetId) {
             const container = document.getElementById(targetId);
             if(!container) return; container.innerHTML = '';
+            if(!roomConfig.wall_objects) roomConfig.wall_objects = [];
             roomConfig.wall_objects.forEach((o) => {
                 const w = document.createElement('div');
                 w.className = `wall-v ${o.type === 'window' ? 'win-v' : 'door-v'}`;
@@ -287,8 +476,481 @@
             });
         }
 
-        function openAdmin() {
+        async function confirmBooking() {
+            if(!selectedSeat) return alert("กรุณาเลือกที่นั่งก่อนครับ");
+            
+            // เช็คว่านักเรียนเคยจองไปแล้วหรือยัง เพื่อป้องกันการจองซ้ำซ้อน
+            const { data: existing } = await _supabase.from('bookings').select('*').eq('student_id', userData.student_id).maybeSingle();
+            if (existing) return alert(`คุณได้จองที่นั่งเลขที่ ${existing.seat_number} ไปแล้ว ไม่สามารถจองเพิ่มได้ครับ`);
+
+            const { error } = await _supabase.from('bookings').insert([{
+                student_id: userData.student_id,
+                student_name: userData.name,
+                seat_number: selectedSeat
+            }]);
+
+            if(!error) {
+                document.getElementById('m-seat').innerText = selectedSeat;
+                document.getElementById('m-name').innerText = userData.name;
+                document.getElementById('m-id').innerText = "ID: " + userData.student_id;
+                document.getElementById('success-modal').classList.remove('hidden');
+            } else {
+                alert("ที่นั่งนี้อาจถูกจองตัดหน้าไปแล้ว กรุณาลองใหม่อีกครั้ง");
+                loadSeatData();
+            }
+        }
+
+        // --- HOMEWORK SYSTEM ---
+        async function loadHomeworkData() {
+            try {
+                const { data: hws } = await _supabase.from('homework').select('*').order('deadline', { ascending: true });
+                homeworkList = hws || [];
+                const { data: doneList } = await _supabase.from('homework_status').select('homework_id').eq('student_id', userData.student_id);
+                completedHomeworkIds = doneList ? doneList.map(item => item.homework_id) : [];
+                renderHomeworkList();
+            } catch (err) { console.error(err); }
+        }
+
+        function renderHomeworkList() {
+            const container = document.getElementById('homework-list');
+            container.innerHTML = '';
+            const activeHomework = homeworkList.filter(hw => !completedHomeworkIds.includes(hw.id));
+
+            if(activeHomework.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-12 bg-white/60 text-slate-400 rounded-3xl font-medium border border-dashed border-slate-200">ไม่มีการบ้าน</div>`;
+                return;
+            }
+
+            activeHomework.forEach(hw => {
+                const today = new Date(); today.setHours(0,0,0,0);
+                const dlDate = new Date(hw.deadline); dlDate.setHours(0,0,0,0);
+                const diffTime = dlDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                let badgeColor = 'bg-gray-100 text-gray-600';
+                let countdownText = `เหลือเวลาอีก ${diffDays} วัน`;
+
+                if (diffDays === 0) { badgeColor = 'bg-red-500 text-white animate-pulse'; countdownText = 'กำหนดส่งวันนี้!!'; }
+                else if (diffDays === 1) { badgeColor = 'bg-orange-500 text-white'; countdownText = 'ส่งวันพรุ่งนี้!'; }
+
+                const card = document.createElement('div');
+                card.className = `bg-white p-5 rounded-3xl border flex flex-col justify-between shadow-sm`;
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start gap-2 mb-2">
+                            <span class="px-3 py-0.5 bg-blue-50 text-blue-600 rounded-xl font-bold text-xs truncate">วิชา: ${hw.subject_name}</span>
+                            <span class="px-2 py-0.5 rounded-lg text-[9px] font-bold shrink-0 ${badgeColor}">${countdownText}</span>
+                        </div>
+                        <p class="text-xs text-slate-700 font-medium whitespace-pre-wrap mt-2">${hw.title}</p>
+                    </div>
+                    <div class="border-t pt-3 mt-4 flex justify-between items-center">
+                        <span class="text-[10px] text-gray-400"><i class="fa-regular fa-clock mr-1"></i> ส่ง: ${new Date(hw.deadline).toLocaleDateString('th-TH')}</span>
+                        <button onclick="markAsDone(${hw.id})" class="text-[11px] font-bold bg-green-50 text-green-600 px-3 py-1.5 rounded-xl"><i class="fa-solid fa-check"></i> ทำเสร็จแล้ว</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function addHomework() {
+            const subject = document.getElementById('hw-subject').value.trim();
+            const title = document.getElementById('hw-title').value.trim();
+            const deadline = document.getElementById('hw-deadline').value;
+            if(!subject || !title || !deadline) return alert("กรุณากรอกข้อมูลให้ครบ");
+
+            await _supabase.from('homework').insert([{ subject_name: subject, title: title, deadline: deadline, created_by: userData.student_id }]);
+            document.getElementById('hw-subject').value = ''; document.getElementById('hw-title').value = ''; document.getElementById('hw-deadline').value = '';
+            loadHomeworkData();
+        }
+
+        async function markAsDone(homeworkId) {
+            await _supabase.from('homework_status').insert([{ student_id: userData.student_id, homework_id: homeworkId }]);
+            loadHomeworkData();
+        }
+
+        // --- DUTY SYSTEM ---
+        async function loadDutyData() {
+            const { data: duties } = await _supabase.from('duties').select('*').order('id');
+            dutiesConfig = duties || [];
+            const { data: regs } = await _supabase.from('duty_registrations').select('*');
+            dutyRegistrations = regs || [];
+            renderDutyInterface();
+        }
+
+        function getDayColorStyle(dayNameEn) {
+            const lowerDay = dayNameEn.toLowerCase();
+            if (lowerDay.includes('mon')) return 'bg-yellow-100 text-yellow-700';
+            if (lowerDay.includes('tue')) return 'bg-pink-100 text-pink-700';
+            if (lowerDay.includes('wed')) return 'bg-green-100 text-green-700';
+            if (lowerDay.includes('thu')) return 'bg-orange-100 text-orange-700';
+            if (lowerDay.includes('fri')) return 'bg-blue-100 text-blue-700';
+            return 'bg-slate-100 text-slate-700';
+        }
+
+        function renderDutyInterface() {
+            const grid = document.getElementById('duty-grid'); grid.innerHTML = '';
+            const myReg = dutyRegistrations.find(r => String(r.student_id) === String(userData.student_id));
+            const mySelectedDay = myReg ? myReg.day_name_en : null;
+
+            dutiesConfig.forEach(day => {
+                const workers = dutyRegistrations.filter(r => r.day_name_en === day.day_name_en);
+                const isMyDay = mySelectedDay === day.day_name_en;
+                const card = document.createElement('div');
+                card.className = `glass p-4 rounded-2xl border text-center flex flex-col justify-between min-h-[240px] ${isMyDay ? 'ring-4 ring-green-400':''}`;
+                
+                const dayColorClass = getDayColorStyle(day.day_name_en);
+
+                let btnHTML = `<button onclick="selectDuty('${day.day_name_en}')" class="w-full py-2 bg-[#00b272] text-white rounded-xl text-xs font-bold">เลือกวันนี้</button>`;
+                if(isMyDay) btnHTML = `<button onclick="cancelDuty()" class="w-full py-2 bg-red-500 text-white rounded-xl text-xs font-bold">ยกเลิกเวร</button>`;
+                else if(mySelectedDay || workers.length >= day.max_slots) btnHTML = `<button disabled class="w-full py-2 bg-gray-100 text-gray-300 rounded-xl text-xs font-bold cursor-not-allowed">ไม่พร้อมเลือก</button>`;
+
+                card.innerHTML = `
+                    <div>
+                        <div class="px-3 py-1 rounded-full text-xs font-bold mx-auto w-fit ${dayColorClass}">วัน${day.day_name_th}</div>
+                        <div class="text-[10px] text-gray-400 mb-3 mt-1">สมาชิก (${workers.length}/${day.max_slots})</div>
+                        <div class="space-y-1 text-xs text-slate-600 font-medium max-h-28 overflow-y-auto">
+                            ${workers.map(w => `<div class="bg-white/80 py-1 border rounded-lg">${w.student_name}</div>`).join('') || '<p class="text-gray-300 italic">ยังไม่มีสมาชิก</p>'}
+                        </div>
+                    </div>
+                    <div class="mt-4">${btnHTML}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function selectDuty(dayNameEn) {
+            await _supabase.from('duty_registrations').insert([{ student_id: userData.student_id, student_name: userData.name, day_name_en: dayNameEn }]);
+            loadDutyData();
+        }
+
+        async function cancelDuty() {
+            await _supabase.from('duty_registrations').delete().eq('student_id', userData.student_id);
+            loadDutyData();
+        }
+
+        // --- CLASSROOM FUND SYSTEM ---
+        async function loadFundData() {
+            try {
+                const { data: config } = await _supabase.from('classroom_funds').select('*').order('id', { ascending: false }).limit(1).maybeSingle();
+                currentFundConfig = config;
+
+                if (!currentFundConfig) {
+                    document.getElementById('fund-target-title').innerText = "ยังไม่มีหัวข้อเก็บเงิน";
+                    document.getElementById('user-payment-status-box').innerHTML = `<p class="text-gray-400 text-sm py-6">รอแอดมินเปิดโปรเจกต์เก็บเงินครับ</p>`;
+                    return;
+                }
+
+                document.getElementById('fund-target-title').innerText = `${currentFundConfig.title} (${currentFundConfig.amount_per_person} บาท)`;
+
+                const { data: payments } = await _supabase.from('fund_payments').select('*').eq('fund_id', currentFundConfig.id).order('paid_at', { ascending: false });
+                paymentList = payments || [];
+
+                let totalAmount = 0;
+                let qrCount = 0;
+                let cashCount = 0;
+
+                paymentList.forEach(p => {
+                    totalAmount += parseFloat(p.amount);
+                    if (p.payment_method === 'qrcode') qrCount++;
+                    if (p.payment_method === 'cash') cashCount++;
+                });
+
+                document.getElementById('total-fund-amount').innerText = totalAmount.toFixed(2) + " บาท";
+                document.getElementById('count-qr-payment').innerText = qrCount + " คน";
+                document.getElementById('count-cash-payment').innerText = cashCount + " คน";
+
+                const tbody = document.getElementById('payment-history-rows');
+                tbody.innerHTML = '';
+                if(paymentList.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400 italic">ยังไม่มีใครส่งเงินสมทบทุนรอบนี้</td></tr>`;
+                } else {
+                    paymentList.forEach(p => {
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b hover:bg-slate-50";
+                        tr.innerHTML = `
+                            <td class="py-2.5">${p.student_id}</td>
+                            <td class="py-2.5 font-bold">${p.student_name}</td>
+                            <td class="py-2.5 text-center text-emerald-600 font-bold">${parseFloat(p.amount).toFixed(2)}</td>
+                            <td class="py-2.5 text-right">
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${p.payment_method==='qrcode'?'bg-blue-50 text-blue-600':'bg-orange-50 text-orange-600'}">
+                                    ${p.payment_method==='qrcode'?'<i class="fa-solid fa-qrcode"></i> QR':'<i class="fa-solid fa-money-bill-wave"></i> เงินสด'}
+                                </span>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+                renderUserPaymentStatus();
+            } catch (err) { console.error(err); }
+        }
+
+        function renderUserPaymentStatus() {
+            const container = document.getElementById('user-payment-status-box');
+            const myPayment = paymentList.find(p => String(p.student_id) === String(userData.student_id));
+
+            if (myPayment) {
+                container.innerHTML = `
+                    <div class="bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-2xl p-6">
+                        <div class="text-3xl mb-2"><i class="fa-solid fa-circle-check"></i></div>
+                        <p class="font-bold text-sm">คุณชำระเงินเรียบร้อยแล้ว</p>
+                        <p class="text-[10px] opacity-80 mt-1">ขอบคุณที่ร่วมสมทบทุนกองทุนห้องเรียนครับ</p>
+                    </div>
+                `;
+            } else {
+                const ppId = currentFundConfig.promptpay_id;
+                const money = currentFundConfig.amount_per_person;
+                const qrUrl = `https://promptpay.io/${ppId}/${money}.png`;
+
+                container.innerHTML = `
+                    <div class="space-y-4">
+                        <p class="text-xs text-gray-500">สแกนชำระเงินผ่าน Mobile Banking ยอดเงินจะถูกกรอกให้อัตโนมัติ</p>
+                        <div class="bg-white p-2 border-2 border-slate-100 inline-block rounded-2xl shadow-inner mx-auto">
+                            <img src="${qrUrl}" alt="Promptpay QR Code" class="w-44 h-44 mx-auto rounded-xl">
+                        </div>
+                        <div class="bg-slate-50 rounded-xl p-2.5 border text-center">
+                            <p class="text-[10px] text-gray-400 font-bold">ยอดเงินที่ต้องโอน</p>
+                            <p class="text-lg font-bold text-slate-800">${money} บาท</p>
+                        </div>
+                        <button onclick="submitQrPaymentSuccess()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs shadow transition">
+                            <i class="fa-solid fa-receipt mr-1"></i> โอนเงินสำเร็จแล้ว
+                        </button>
+                        <p class="text-[9px] text-gray-400 italic">*** หากจ่ายด้วยเงินสด กรุณาติดต่อแอดมินหน้าห้อง ***</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function submitQrPaymentSuccess() {
+            if(!currentFundConfig || !userData) return;
+            if(!confirm(`ยืนยันว่าคุณโอนเงินจำนวน ${currentFundConfig.amount_per_person} บาท เรียบร้อยแล้วใช่ไหมครับ?`)) return;
+
+            const { error } = await _supabase.from('fund_payments').insert([{
+                fund_id: currentFundConfig.id,
+                student_id: userData.student_id,
+                student_name: userData.name,
+                amount: currentFundConfig.amount_per_person,
+                payment_method: 'qrcode'
+            }]);
+
+            if(!error) {
+                alert("บันทึกการส่งสมทบทุนของคุณเรียบร้อยค๊าบ!");
+                loadFundData();
+            } else { alert("เกิดความผิดพลาดในการส่งข้อมูลการโอน"); }
+        }
+
+        async function fetchStudentNameForCash(studentId) {
+            const previewBox = document.getElementById('cash-name-preview');
+            const trimmedId = studentId.trim();
+            if(!trimmedId) {
+                previewBox.innerText = "พิมพ์รหัสเพื่อค้นหาชื่อ...";
+                previewBox.className = "text-[11px] text-slate-500 px-2 font-medium bg-slate-50 py-1.5 rounded-lg border border-dashed border-slate-200 min-h-[28px] flex items-center";
+                resolvedCashStudentName = ""; return;
+            }
+            const { data } = await _supabase.from('settings').select('name').eq('student_id', trimmedId).maybeSingle();
+            if(data) {
+                resolvedCashStudentName = data.name;
+                previewBox.innerText = `🔍 พบข้อมูล: ${data.name}`;
+                previewBox.className = "text-[11px] text-emerald-700 px-2 font-bold bg-emerald-50 py-1.5 rounded-lg border border-emerald-200 min-h-[28px] flex items-center";
+            } else {
+                resolvedCashStudentName = "";
+                previewBox.innerText = "❌ ไม่พบรหัสนักเรียนนี้ในระบบ settings";
+                previewBox.className = "text-[11px] text-red-600 px-2 font-medium bg-red-50 py-1.5 rounded-lg border border-red-200 min-h-[28px] flex items-center";
+            }
+        }
+
+        async function addCashPaymentByAdmin() {
+            if(!currentFundConfig) return alert("ยังไม่มีแคมเปญเปิดให้รับเงินในปัจจุบัน");
+            const targetId = document.getElementById('cash-student-id').value.trim();
+            if(!targetId) return alert("กรุณากรอกรหัสประจำตัวนักเรียนก่อนครับ");
+            if(!resolvedCashStudentName) return alert("ระบบยังไม่พบชื่อของรหัสนักเรียนนี้ กรุณาตรวจสอบรหัสอีกครั้งครับ");
+
+            const { error } = await _supabase.from('fund_payments').insert([{
+                fund_id: currentFundConfig.id,
+                student_id: targetId,
+                student_name: resolvedCashStudentName,
+                amount: currentFundConfig.amount_per_person,
+                payment_method: 'cash'
+            }]);
+
+            if(!error) {
+                alert(`บันทึกรับเงินสดจากคุณ ${resolvedCashStudentName} สำเร็จเรียบร้อย!`);
+                document.getElementById('cash-student-id').value = '';
+                document.getElementById('cash-name-preview').innerText = "พิมพ์รหัสเพื่อค้นหาชื่อ...";
+                document.getElementById('cash-name-preview').className = "text-[11px] text-slate-500 px-2 font-medium bg-slate-50 py-1.5 rounded-lg border border-dashed border-slate-200 min-h-[28px] flex items-center";
+                resolvedCashStudentName = ""; loadFundData();
+            } else { alert("เกิดข้อผิดพลาดในการบันทึกรับเงินสด"); }
+        }
+
+        async function saveFundConfig() {
+            const title = document.getElementById('adm-fund-title').value.trim();
+            const amount = document.getElementById('adm-fund-amount').value.trim();
+            const promptpay = document.getElementById('adm-fund-pp').value.trim();
+            if(!title || !amount || !promptpay) return alert("กรุณากรอกรายละเอียดกองทุนให้ครบครันก่อนบันทึกครับ");
+
+            const { error } = await _supabase.from('classroom_funds').insert([{
+                title: title, amount_per_person: parseFloat(amount), promptpay_id: promptpay
+            }]);
+            if(!error) { alert("ทำการอัปเดตหัวข้อและยอดรับเงินกองทุนห้องชุดใหม่เรียบร้อยแล้วครับ!"); loadFundData(); } 
+            else { alert("ตั้งค่ากองทุนไม่สำเร็จ"); }
+        }
+
+        // --- CLASSROOM CHAT SYSTEM ---
+        async function initChatSystem() {
+            loadChatMessages();
+            if (chatSubscription) _supabase.removeChannel(chatSubscription);
+            
+            chatSubscription = _supabase.channel('public:messages')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                    appendSingleMessage(payload.new);
+                })
+                .subscribe();
+        }
+
+        async function loadChatMessages() {
+            const container = document.getElementById('chat-messages-container');
+            const { data: msgs, error } = await _supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(100);
+            
+            container.innerHTML = '';
+            if (error || !msgs || msgs.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 text-xs py-10">เริ่มต้นการแชทกลุ่มห้องเรียนที่นี่...</div>`;
+                return;
+            }
+            msgs.forEach(msg => appendSingleMessage(msg));
+        }
+
+        function urlify(text) {
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return text.replace(urlRegex, function(url) {
+                return '<a href="' + url + '" target="_blank" class="text-purple-600 underline font-bold break-all">' + url + '</a>';
+            });
+        }
+
+        function appendSingleMessage(msg) {
+            const container = document.getElementById('chat-messages-container');
+            if(container.innerHTML.includes("เริ่มต้นการแชท") || container.innerHTML.includes("กำลังโหลดข้อความ")) container.innerHTML = '';
+
+            const isMe = String(msg.student_id) === String(userData.student_id);
+            const msgCard = document.createElement('div');
+            msgCard.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} w-full animate-pop`;
+
+            let contentHTML = "";
+            if(msg.text_content) {
+                contentHTML += `<p class="text-xs font-medium whitespace-pre-wrap">${urlify(msg.text_content)}</p>`;
+            }
+
+            if(msg.file_url) {
+                if(msg.file_type && msg.file_type.startsWith('image/')) {
+                    contentHTML += `
+                        <div class="mt-2 rounded-xl overflow-hidden border max-w-xs bg-black/5">
+                            <img src="${msg.file_url}" alt="Shared Image" class="w-full h-auto max-h-60 object-contain cursor-pointer" onclick="window.open('${msg.file_url}', '_blank')">
+                        </div>
+                    `;
+                } else {
+                    contentHTML += `
+                        <a href="${msg.file_url}" target="_blank" class="mt-2 flex items-center gap-2 p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border text-xs font-bold transition w-fit max-w-xs">
+                            <i class="fa-solid fa-file-arrow-down text-base text-purple-600 shrink-0"></i>
+                            <span class="truncate">${msg.file_name || 'ดาวน์โหลดไฟล์'}</span>
+                        </a>
+                    `;
+                }
+            }
+
+            msgCard.innerHTML = `
+                <span class="text-[10px] text-gray-400 font-bold mb-1 px-1">${msg.student_name} ${isMe ? '(คุณ)' : ''}</span>
+                <div class="${isMe ? 'bg-purple-600 text-white rounded-l-2xl rounded-tr-2xl' : 'bg-white text-slate-800 rounded-r-2xl rounded-tl-2xl border'} p-3 shadow-sm max-w-[85%] md:max-w-md">
+                    ${contentHTML}
+                </div>
+                <span class="text-[8px] text-gray-300 mt-0.5 px-1">${new Date(msg.created_at).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'})}</span>
+            `;
+            
+            container.appendChild(msgCard);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function handleFileSelection() {
+            const fileInput = document.getElementById('chat-file-input');
+            if(fileInput.files.length === 0) return;
+            selectedChatFile = fileInput.files[0];
+
+            const previewArea = document.getElementById('file-preview-area');
+            const previewName = document.getElementById('file-preview-name');
+            
+            previewName.innerText = `📎 ไฟล์ที่เลือก: ${selectedChatFile.name} (${(selectedChatFile.size/1024).toFixed(1)} KB)`;
+            previewArea.classList.remove('hidden');
+        }
+
+        function clearSelectedFile() {
+            selectedChatFile = null;
+            document.getElementById('chat-file-input').value = "";
+            document.getElementById('file-preview-area').classList.add('hidden');
+        }
+
+        async function sendChatMessage() {
+            const textInput = document.getElementById('chat-text-input');
+            const text = textInput.value.trim();
+            const sendBtn = document.getElementById('chat-send-btn');
+
+            if (!text && !selectedChatFile) return;
+
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin text-sm"></i>`;
+
+            let uploadedUrl = null;
+            let fileName = null;
+            let fileType = null;
+
+            if(selectedChatFile) {
+                fileName = selectedChatFile.name;
+                fileType = selectedChatFile.type;
+                const fileExt = fileName.split('.').pop();
+                const uniquePath = `chat_${Date.now()}_${Math.floor(Math.random() * 1000)}.${fileExt}`;
+
+                const { data, error: uploadErr } = await _supabase.storage
+                    .from('chat-files')
+                    .upload(uniquePath, selectedChatFile);
+
+                if (uploadErr) {
+                    alert("การอัปโหลดไฟล์ล้มเหลว: " + uploadErr.message);
+                    sendBtn.disabled = false;
+                    sendBtn.innerHTML = `<i class="fa-solid fa-paper-plane text-sm"></i>`;
+                    return;
+                }
+
+                const { data: urlData } = _supabase.storage.from('chat-files').getPublicUrl(uniquePath);
+                uploadedUrl = urlData.publicUrl;
+            }
+
+            const { error: insertErr } = await _supabase.from('messages').insert([{
+                student_id: userData.student_id,
+                student_name: userData.name,
+                text_content: text || null,
+                file_url: uploadedUrl,
+                file_name: fileName,
+                file_type: fileType
+            }]);
+
+            if (insertErr) alert("ส่งข้อความไม่สำเร็จ: " + insertErr.message);
+
+            textInput.value = "";
+            clearSelectedFile();
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = `<i class="fa-solid fa-paper-plane text-sm"></i>`;
+        }
+
+        // --- ADMIN SEAT CONTROLS ---
+        async function openAdmin() {
+            if(!userData || userData.role !== 'admin') return;
             document.getElementById('admin-panel').classList.remove('hidden');
+            
+            const { data: config } = await _supabase.from('room').select('*').eq('id', 1).maybeSingle();
+            if(config) roomConfig = { ...roomConfig, ...config };
+            
+            const { data: fundCfg } = await _supabase.from('classroom_funds').select('*').order('id', { ascending: false }).limit(1).maybeSingle();
+            if(fundCfg) {
+                document.getElementById('adm-fund-title').value = fundCfg.title;
+                document.getElementById('adm-fund-amount').value = fundCfg.amount_per_person;
+                document.getElementById('adm-fund-pp').value = fundCfg.promptpay_id;
+            }
+
             document.getElementById('inp-rows').value = roomConfig.rows;
             document.getElementById('inp-cols').value = roomConfig.cols;
             resetLayout();
@@ -298,70 +960,28 @@
             roomConfig.rows = parseInt(document.getElementById('inp-rows').value) || 1;
             roomConfig.cols = parseInt(document.getElementById('inp-cols').value) || 1;
             render('admin-seat-map', 'admin-wall-container', true);
-            const list = document.getElementById('obj-list');
-            list.innerHTML = '';
-            roomConfig.wall_objects.forEach((o, i) => {
-                const item = document.createElement('div');
-                item.className = "flex justify-between p-2 bg-slate-50 rounded border text-[10px]";
-                item.innerHTML = `<span>${o.type === 'window' ? 'หน้าต่าง' : 'ประตู'} (${o.side})</span><button onclick="roomConfig.wall_objects.splice(${i},1);resetLayout()"><i class="fa-solid fa-trash"></i></button>`;
-                list.appendChild(item);
-            });
         }
 
         async function saveAndCloseAdmin() {
             const btn = document.getElementById('admin-save-btn');
-            btn.innerText = "กำลังบันทึก...";
-            await _supabase.from('room').update(roomConfig).eq('id', 1);
-            document.getElementById('admin-panel').classList.add('hidden');
-            btn.innerText = "บันทึกข้อมูล";
-            loadData();
-        }
+            btn.innerText = "กำลังบันทึก..."; btn.disabled = true;
 
-        function openObjModal(type) {
-            tempObjType = type;
-            document.getElementById('obj-modal').classList.remove('hidden');
-            updateSideUI();
-        }
-
-        function updateSideUI() {
-            document.getElementById('side-left').className = tempSide === 'left' ? "flex-1 py-3 rounded-xl font-bold bg-white text-[#00b272]" : "flex-1 py-3 rounded-xl font-bold text-slate-400";
-            document.getElementById('side-right').className = tempSide === 'right' ? "flex-1 py-3 rounded-xl font-bold bg-white text-[#00b272]" : "flex-1 py-3 rounded-xl font-bold text-slate-400";
-        }
-
-        function confirmAddObj() {
-            const top = document.getElementById('obj-pos').value;
-            roomConfig.wall_objects.push({ type: tempObjType, side: tempSide, top: parseInt(top) });
-            document.getElementById('obj-modal').classList.add('hidden');
-            resetLayout();
-        }
-
-        async function confirmBooking() {
-            if(!selectedSeat) return alert("เลือกที่นั่งก่อนครับ");
-            const btn = document.getElementById('confirm-btn');
-            btn.disabled = true;
-
-            const { data: check } = await _supabase.from('bookings').select('id').eq('student_id', userData.student_id).single();
-            if(check) { alert("คุณจองไปแล้ว!"); btn.disabled = false; return; }
-
-            const timeNow = new Date().toLocaleString('th-TH');
-            const { error } = await _supabase.from('bookings').insert([{ 
-                student_name: userData.name, student_id: userData.student_id, seat_number: selectedSeat 
-            }]);
-
-            if(!error) {
-                document.getElementById('m-seat').innerText = selectedSeat;
-                document.getElementById('m-name').innerText = userData.name;
-                document.getElementById('m-id').innerText = "ID: " + userData.student_id;
-                document.getElementById('m-time').innerText = "จองเมื่อ: " + timeNow;
-                document.getElementById('success-modal').classList.remove('hidden');
-            } else { alert("จองไม่สำเร็จ"); btn.disabled = false; }
+            try {
+                await _supabase.from('room').upsert({
+                    id: 1, rows: roomConfig.rows, cols: roomConfig.cols,
+                    wall_objects: roomConfig.wall_objects, blocked_seats: roomConfig.blocked_seats,
+                    custom_labels: roomConfig.custom_labels
+                });
+                document.getElementById('admin-panel').classList.add('hidden');
+                alert("บันทึกข้อมูลระบบเรียบร้อยครับ!");
+            } catch(err) { console.error(err); }
+            finally { btn.innerText = "บันทึกข้อมูลทั้งหมด"; btn.disabled = false; loadSeatData(); }
         }
 
         function closeSuccessModal() {
             document.getElementById('success-modal').classList.add('hidden');
             selectedSeat = null; document.getElementById('display-seat').innerText = "--";
-            document.getElementById('confirm-btn').disabled = false;
-            loadData();
+            loadSeatData();
         }
     </script>
 </body>
