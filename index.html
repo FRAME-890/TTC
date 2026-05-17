@@ -865,45 +865,66 @@
             }
         }
 
-        // ฟังก์ชันดาวน์โหลด QR Code ลงเครื่องทันทีโดยไม่ติดปัญหาเปิดแท็บใหม่ (ใช้เทคนิค Canvas)
-        async function downloadQRCodeImage(url) {
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('CORS restriction or fetch failed');
-                
-                const blob = await response.blob();
+       // ฟังก์ชันดาวน์โหลด QR Code อัปเดตล่าสุด (แก้ปัญหาปุ่มนิ่ง/ไม่ทำงานบน Chrome มือถือ)
+async function downloadQRCodeImage(url) {
+    try {
+        // แผน 1: ลองดาวน์โหลดแบบตรงๆ ดูก่อน
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('CORS or fetch failed');
+        
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `QR_ClassFund_${userData ? userData.student_id : 'payment'}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+        console.log("Switching to Advanced Canvas Blob Download Mode for Chrome...");
+        
+        // แผน 2: จัดการกับ CORS และ Chrome มือถือด้วย Canvas + toBlob
+        const img = new Image();
+        img.crossOrigin = 'anonymous'; 
+        img.src = url;
+        img.onload = function () {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            
+            // เปลี่ยนจาก .toDataURL() เป็น .toBlob() เพื่อให้ Chrome ยอมรับและเปิดทางให้โหลดลงเครื่อง
+            canvas.toBlob(function(blob) {
+                if (!blob) {
+                    console.error("Blob generation failed");
+                    return;
+                }
                 const blobUrl = URL.createObjectURL(blob);
-                
                 const link = document.createElement('a');
                 link.href = blobUrl;
                 link.download = `QR_ClassFund_${userData ? userData.student_id : 'payment'}.png`;
+                
                 document.body.appendChild(link);
                 link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(blobUrl);
-            } catch (err) {
-                console.log("Switching to Base64 Direct Download Canvas Mode...");
-                // แผนสำรอง: ดึงรูปภาพมาเขียนลงผืนผ้าใบ Canvas แล้วดึงค่า Base64 ไปสั่งดาวน์โหลดโดยตรง
-                const img = new Image();
-                img.crossOrigin = 'anonymous'; 
-                img.src = url;
-                img.onload = function () {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    
-                    const base64Url = canvas.toDataURL('image/png');
-                    const link = document.createElement('a');
-                    link.href = base64Url;
-                    link.download = `QR_ClassFund_${userData ? userData.student_id : 'payment'}.png`;
-                    document.body.appendChild(link);
-                    link.click();
+                
+                // เคลียร์ขยะในหน่วยความจำหลังจากดาวน์โหลดเสร็จ
+                setTimeout(() => {
                     document.body.removeChild(link);
-                };
-            }
-        }
+                    URL.revokeObjectURL(blobUrl);
+                }, 100);
+            }, 'image/png');
+        };
+        
+        img.onerror = function() {
+            // แผนสุดท้าย: ถ้าติดขัดจริงๆ ให้เปิดรูปในแท็บใหม่เป็นทางเลือกสุดท้าย
+            window.open(url, '_blank');
+        };
+    }
+}
+
 
         function handleSlipSelection() {
             const input = document.getElementById('fund-slip-input');
