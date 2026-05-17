@@ -193,7 +193,7 @@
                                 <th class="pb-2 font-medium">รหัสประจำตัว</th>
                                 <th class="pb-2 font-medium">ชื่อ-นามสกุล</th>
                                 <th class="pb-2 font-medium text-center">จำนวนเงิน</th>
-                                <th class="pb-2 font-medium text-right">รูปแบบ</th>
+                                <th class="pb-2 font-medium text-right">รูปแบบ / หลักฐาน</th>
                             </tr>
                         </thead>
                         <tbody id="payment-history-rows" class="divide-y text-slate-700 font-medium"></tbody>
@@ -327,6 +327,22 @@
         </div>
     </div>
 
+    <!-- Custom Notification Modal -->
+    <div id="custom-alert-modal" class="hidden fixed inset-0 z-[700] bg-black/40 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 opacity-0">
+        <div class="glass max-w-sm w-full p-6 text-center rounded-[2.5rem] shadow-2xl border-white border-2 scale-95 transition-all duration-300">
+            <div id="alert-icon-box" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-lg">
+                <i id="alert-icon" class="fa-solid"></i>
+            </div>
+            <h3 id="alert-title" class="text-xl font-bold text-slate-800 mb-2">---</h3>
+            <p id="alert-message" class="text-xs text-slate-500 font-medium px-2 leading-relaxed mb-6">---</p>
+            <div id="alert-action-buttons" class="w-full flex gap-3">
+                <button id="alert-submit-btn" onclick="closeCustomAlert()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-xs font-bold shadow-md transition active:scale-98">
+                    ตกลง
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://abgtfwjsauobbbnywdts.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_3nA8LZf5Y0C03JzCEMkYcQ_BxXEpOB0';
@@ -349,6 +365,7 @@
         let resolvedCashStudentName = ""; 
 
         let selectedChatFile = null;
+        let selectedSlipFile = null; 
         let chatSubscription = null;
 
         window.onload = () => {
@@ -360,12 +377,74 @@
             }
         };
 
+        function showAlert(title, message, type = 'success', onConfirm = null) {
+            const modal = document.getElementById('custom-alert-modal');
+            const card = modal.querySelector('.glass');
+            const iconBox = document.getElementById('alert-icon-box');
+            const icon = document.getElementById('alert-icon');
+            const actionContainer = document.getElementById('alert-action-buttons');
+            
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-message').innerText = message;
+            
+            iconBox.className = "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-lg";
+            
+            if (type === 'success') {
+                iconBox.classList.add('bg-green-100', 'text-green-600', 'shadow-green-100');
+                icon.className = "fa-solid fa-circle-check";
+            } else if (type === 'error') {
+                iconBox.classList.add('bg-red-100', 'text-red-600', 'shadow-red-100');
+                icon.className = "fa-solid fa-circle-xmark";
+            } else if (type === 'warning') {
+                iconBox.classList.add('bg-amber-100', 'text-amber-600', 'shadow-amber-100');
+                icon.className = "fa-solid fa-triangle-exclamation";
+            } else if (type === 'confirm') {
+                iconBox.classList.add('bg-blue-100', 'text-blue-600', 'shadow-blue-100');
+                icon.className = "fa-solid fa-circle-question";
+            }
+
+            if (type === 'confirm') {
+                actionContainer.innerHTML = `
+                    <button onclick="closeCustomAlert()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl text-xs font-bold transition">ยกเลิก</button>
+                    <button id="alert-confirm-execute" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold shadow-md transition">ยืนยัน</button>
+                `;
+                document.getElementById('alert-confirm-execute').onclick = () => {
+                    closeCustomAlert();
+                    if (onConfirm) onConfirm();
+                };
+            } else {
+                actionContainer.innerHTML = `
+                    <button onclick="closeCustomAlert()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-xs font-bold shadow-md transition">ตกลง</button>
+                `;
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                card.classList.remove('scale-95');
+                card.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeCustomAlert() {
+            const modal = document.getElementById('custom-alert-modal');
+            const card = modal.querySelector('.glass');
+            
+            modal.classList.add('opacity-0');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
         async function doLogin() {
             const sid = document.getElementById('student_id_input').value.trim();
-            if(!sid) return alert("กรุณากรอกรหัสประจำตัว");
+            if(!sid) return showAlert("แจ้งเตือน", "กรุณากรอกรหัสประจำตัวนักเรียนก่อนเข้าสู่ระบบ", "warning");
             
             const { data, error } = await _supabase.from('settings').select('*').eq('student_id', sid).maybeSingle();
-            if (error || !data) return alert("ไม่พบข้อมูลนักเรียนในระบบ");
+            if (error || !data) return showAlert("ข้อผิดพลาด", "ไม่พบข้อมูลนักเรียนรายนี้ในระบบฐานข้อมูล", "error");
             
             userData = data;
             localStorage.setItem('thaiticket_session', JSON.stringify(userData));
@@ -477,11 +556,10 @@
         }
 
         async function confirmBooking() {
-            if(!selectedSeat) return alert("กรุณาเลือกที่นั่งก่อนครับ");
+            if(!selectedSeat) return showAlert("แจ้งเตือน", "กรุณาเลือกตำแหน่งที่นั่งที่ต้องการจองบนผังห้องเรียน", "warning");
             
-            // เช็คว่านักเรียนเคยจองไปแล้วหรือยัง เพื่อป้องกันการจองซ้ำซ้อน
             const { data: existing } = await _supabase.from('bookings').select('*').eq('student_id', userData.student_id).maybeSingle();
-            if (existing) return alert(`คุณได้จองที่นั่งเลขที่ ${existing.seat_number} ไปแล้ว ไม่สามารถจองเพิ่มได้ครับ`);
+            if (existing) return showAlert("ปฏิเสธการดำเนินการ", `คุณได้สิทธิ์จองที่นั่งเลขที่ ${existing.seat_number} แล้ว ไม่สามารถจองซ้ำได้`, "error");
 
             const { error } = await _supabase.from('bookings').insert([{
                 student_id: userData.student_id,
@@ -495,7 +573,7 @@
                 document.getElementById('m-id').innerText = "ID: " + userData.student_id;
                 document.getElementById('success-modal').classList.remove('hidden');
             } else {
-                alert("ที่นั่งนี้อาจถูกจองตัดหน้าไปแล้ว กรุณาลองใหม่อีกครั้ง");
+                showAlert("ข้อผิดพลาด", "ที่นั่งนี้อาจถูกจองโดยผู้ใช้อื่นแล้วในเวลาเดียวกัน กรุณาเลือกที่นั่งใหม่อีกครั้ง", "error");
                 loadSeatData();
             }
         }
@@ -517,7 +595,7 @@
             const activeHomework = homeworkList.filter(hw => !completedHomeworkIds.includes(hw.id));
 
             if(activeHomework.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-12 bg-white/60 text-slate-400 rounded-3xl font-medium border border-dashed border-slate-200">ไม่มีการบ้าน</div>`;
+                container.innerHTML = `<div class="col-span-full text-center py-12 bg-white/60 text-slate-400 rounded-3xl font-medium border border-dashed border-slate-200">ไม่มีการบ้านค้างส่ง</div>`;
                 return;
             }
 
@@ -529,8 +607,8 @@
                 let badgeColor = 'bg-gray-100 text-gray-600';
                 let countdownText = `เหลือเวลาอีก ${diffDays} วัน`;
 
-                if (diffDays === 0) { badgeColor = 'bg-red-500 text-white animate-pulse'; countdownText = 'กำหนดส่งวันนี้!!'; }
-                else if (diffDays === 1) { badgeColor = 'bg-orange-500 text-white'; countdownText = 'ส่งวันพรุ่งนี้!'; }
+                if (diffDays === 0) { badgeColor = 'bg-red-500 text-white animate-pulse'; countdownText = 'กำหนดส่งวันนี้'; }
+                else if (diffDays === 1) { badgeColor = 'bg-orange-500 text-white'; countdownText = 'กำหนดส่งพรุ่งนี้'; }
 
                 const card = document.createElement('div');
                 card.className = `bg-white p-5 rounded-3xl border flex flex-col justify-between shadow-sm`;
@@ -543,7 +621,7 @@
                         <p class="text-xs text-slate-700 font-medium whitespace-pre-wrap mt-2">${hw.title}</p>
                     </div>
                     <div class="border-t pt-3 mt-4 flex justify-between items-center">
-                        <span class="text-[10px] text-gray-400"><i class="fa-regular fa-clock mr-1"></i> ส่ง: ${new Date(hw.deadline).toLocaleDateString('th-TH')}</span>
+                        <span class="text-[10px] text-gray-400"><i class="fa-regular fa-clock mr-1"></i> กำหนดส่ง: ${new Date(hw.deadline).toLocaleDateString('th-TH')}</span>
                         <button onclick="markAsDone(${hw.id})" class="text-[11px] font-bold bg-green-50 text-green-600 px-3 py-1.5 rounded-xl"><i class="fa-solid fa-check"></i> ทำเสร็จแล้ว</button>
                     </div>
                 `;
@@ -555,15 +633,17 @@
             const subject = document.getElementById('hw-subject').value.trim();
             const title = document.getElementById('hw-title').value.trim();
             const deadline = document.getElementById('hw-deadline').value;
-            if(!subject || !title || !deadline) return alert("กรุณากรอกข้อมูลให้ครบ");
+            if(!subject || !title || !deadline) return showAlert("แจ้งเตือน", "กรุณากรอกข้อมูลและรายละเอียดการบ้านให้ครบทุกช่องก่อนดำเนินการ", "warning");
 
             await _supabase.from('homework').insert([{ subject_name: subject, title: title, deadline: deadline, created_by: userData.student_id }]);
             document.getElementById('hw-subject').value = ''; document.getElementById('hw-title').value = ''; document.getElementById('hw-deadline').value = '';
+            showAlert("สำเร็จ", "เพิ่มข้อมูลการบ้านใหม่เข้าสู่ระบบเรียบร้อยแล้ว", "success");
             loadHomeworkData();
         }
 
         async function markAsDone(homeworkId) {
             await _supabase.from('homework_status').insert([{ student_id: userData.student_id, homework_id: homeworkId }]);
+            showAlert("สำเร็จ", "บันทึกสถานะการทำเสร็จเรียบร้อยแล้ว", "success");
             loadHomeworkData();
         }
 
@@ -587,31 +667,62 @@
         }
 
         function renderDutyInterface() {
-            const grid = document.getElementById('duty-grid'); grid.innerHTML = '';
+            const grid = document.getElementById('duty-grid'); 
+            if (!grid) return;
+            grid.innerHTML = '';
+            
             const myReg = dutyRegistrations.find(r => String(r.student_id) === String(userData.student_id));
-            const mySelectedDay = myReg ? myReg.day_name_en : null;
+            const mySelectedDay = myReg ? myReg.day_name_en.toLowerCase() : null;
 
             dutiesConfig.forEach(day => {
-                const workers = dutyRegistrations.filter(r => r.day_name_en === day.day_name_en);
-                const isMyDay = mySelectedDay === day.day_name_en;
+                const currentDayEn = day.day_name_en.toLowerCase();
+                const workers = dutyRegistrations.filter(r => r.day_name_en.toLowerCase() === currentDayEn);
+                const isMyDay = mySelectedDay === currentDayEn;
+                
                 const card = document.createElement('div');
-                card.className = `glass p-4 rounded-2xl border text-center flex flex-col justify-between min-h-[240px] ${isMyDay ? 'ring-4 ring-green-400':''}`;
+                card.className = `glass p-5 rounded-2xl border text-center flex flex-col justify-between min-h-[280px] transition-all duration-300 ${
+                    isMyDay ? 'ring-4 ring-green-500 bg-green-50/30 shadow-lg scale-102' : 'hover:shadow-md'
+                }`;
                 
                 const dayColorClass = getDayColorStyle(day.day_name_en);
 
-                let btnHTML = `<button onclick="selectDuty('${day.day_name_en}')" class="w-full py-2 bg-[#00b272] text-white rounded-xl text-xs font-bold">เลือกวันนี้</button>`;
-                if(isMyDay) btnHTML = `<button onclick="cancelDuty()" class="w-full py-2 bg-red-500 text-white rounded-xl text-xs font-bold">ยกเลิกเวร</button>`;
-                else if(mySelectedDay || workers.length >= day.max_slots) btnHTML = `<button disabled class="w-full py-2 bg-gray-100 text-gray-300 rounded-xl text-xs font-bold cursor-not-allowed">ไม่พร้อมเลือก</button>`;
+                let btnHTML = `<button onclick="selectDuty('${day.day_name_en}')" class="w-full py-2.5 bg-[#00b272] hover:bg-[#009661] text-white rounded-xl text-xs font-bold shadow-sm transition">เลือกเวรวันนี้</button>`;
+                if(isMyDay) {
+                    btnHTML = `<button onclick="cancelDuty()" class="w-full py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold shadow-sm transition"><i class="fa-solid fa-trash-can mr-1"></i> ยกเลิกเวร</button>`;
+                } else if(mySelectedDay || workers.length >= day.max_slots) {
+                    btnHTML = `<button disabled class="w-full py-2.5 bg-gray-100 text-gray-300 rounded-xl text-xs font-bold cursor-not-allowed">เต็ม / เลือกวันอื่นแล้ว</button>`;
+                }
+
+                let workersListHTML = '<p class="text-gray-300 italic py-2 text-[11px]">ยังไม่มีสมาชิก</p>';
+                if (workers.length > 0) {
+                    workersListHTML = workers.map(w => {
+                        const isItMe = String(w.student_id) === String(userData.student_id);
+                        return `
+                            <div class="flex items-center justify-between py-1.5 px-3 border rounded-xl text-xs mb-1.5 font-medium ${
+                                isItMe 
+                                ? 'bg-green-600 text-white font-bold border-green-600 shadow-sm' 
+                                : 'bg-white text-slate-700 border-slate-100'
+                            }">
+                                <span class="truncate"><i class="fa-solid fa-user text-[10px] mr-1 opacity-70"></i> ${w.student_name}</span>
+                                ${isItMe ? '<span class="text-[9px] bg-white/20 px-1.5 py-0.5 rounded-md">คุณ</span>' : ''}
+                            </div>
+                        `;
+                    }).join('');
+                }
 
                 card.innerHTML = `
                     <div>
-                        <div class="px-3 py-1 rounded-full text-xs font-bold mx-auto w-fit ${dayColorClass}">วัน${day.day_name_th}</div>
-                        <div class="text-[10px] text-gray-400 mb-3 mt-1">สมาชิก (${workers.length}/${day.max_slots})</div>
-                        <div class="space-y-1 text-xs text-slate-600 font-medium max-h-28 overflow-y-auto">
-                            ${workers.map(w => `<div class="bg-white/80 py-1 border rounded-lg">${w.student_name}</div>`).join('') || '<p class="text-gray-300 italic">ยังไม่มีสมาชิก</p>'}
+                        <div class="px-4 py-1.5 rounded-full text-xs font-bold mx-auto w-fit shadow-sm ${dayColorClass}">
+                            วัน${day.day_name_th}
+                        </div>
+                        <div class="text-[10px] text-gray-400 mb-4 mt-2 font-bold tracking-wider">
+                            สมาชิกประจำวัน (${workers.length}/${day.max_slots})
+                        </div>
+                        <div class="custom-scrollbar max-h-40 overflow-y-auto pr-0.5">
+                            ${workersListHTML}
                         </div>
                     </div>
-                    <div class="mt-4">${btnHTML}</div>
+                    <div class="mt-5">${btnHTML}</div>
                 `;
                 grid.appendChild(card);
             });
@@ -619,11 +730,13 @@
 
         async function selectDuty(dayNameEn) {
             await _supabase.from('duty_registrations').insert([{ student_id: userData.student_id, student_name: userData.name, day_name_en: dayNameEn }]);
+            showAlert("สำเร็จ", "คุณลงทะเบียนเวรประจำวันเรียบร้อยแล้ว", "success");
             loadDutyData();
         }
 
         async function cancelDuty() {
             await _supabase.from('duty_registrations').delete().eq('student_id', userData.student_id);
+            showAlert("สำเร็จ", "ยกเลิกข้อมูลการลงทะเบียนเวรเรียบร้อยแล้ว", "success");
             loadDutyData();
         }
 
@@ -635,7 +748,7 @@
 
                 if (!currentFundConfig) {
                     document.getElementById('fund-target-title').innerText = "ยังไม่มีหัวข้อเก็บเงิน";
-                    document.getElementById('user-payment-status-box').innerHTML = `<p class="text-gray-400 text-sm py-6">รอแอดมินเปิดโปรเจกต์เก็บเงินครับ</p>`;
+                    document.getElementById('user-payment-status-box').innerHTML = `<p class="text-gray-400 text-sm py-6">ยังไม่มีการตั้งเป้าหมายกองทุนในปัจจุบัน</p>`;
                     return;
                 }
 
@@ -661,19 +774,33 @@
                 const tbody = document.getElementById('payment-history-rows');
                 tbody.innerHTML = '';
                 if(paymentList.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400 italic">ยังไม่มีใครส่งเงินสมทบทุนรอบนี้</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400 italic">ยังไม่มีข้อมูลผู้ร่วมสมทบทุนกองทุนในรอบนี้</td></tr>`;
                 } else {
                     paymentList.forEach(p => {
                         const tr = document.createElement('tr');
                         tr.className = "border-b hover:bg-slate-50";
+                        
+                        let slipButton = ''; 
+                        if(p.payment_method === 'qrcode') {
+                            if (p.slip_url && userData.role === 'admin') {
+                                slipButton = `
+                                    <a href="${p.slip_url}" target="_blank" class="ml-1 inline-flex items-center gap-1 text-blue-500 hover:text-blue-700 font-bold border border-blue-200 bg-blue-50 px-2 py-0.5 rounded transition" title="คลิกเพื่อดูรูปภาพสลิปหลักฐาน">
+                                        <i class="fa-solid fa-image text-[11px]"></i> ดูสลิป
+                                    </a>`;
+                            } else {
+                                slipButton = p.slip_url ? '<span class="text-green-600 font-bold ml-1">ส่งแล้ว</span>' : '<span class="text-gray-400 italic ml-1">ยังไม่ส่ง</span>';
+                            }
+                        }
+
                         tr.innerHTML = `
                             <td class="py-2.5">${p.student_id}</td>
                             <td class="py-2.5 font-bold">${p.student_name}</td>
                             <td class="py-2.5 text-center text-emerald-600 font-bold">${parseFloat(p.amount).toFixed(2)}</td>
-                            <td class="py-2.5 text-right">
+                            <td class="py-2.5 text-right flex items-center justify-end gap-1">
                                 <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${p.payment_method==='qrcode'?'bg-blue-50 text-blue-600':'bg-orange-50 text-orange-600'}">
                                     ${p.payment_method==='qrcode'?'<i class="fa-solid fa-qrcode"></i> QR':'<i class="fa-solid fa-money-bill-wave"></i> เงินสด'}
                                 </span>
+                                ${slipButton}
                             </td>
                         `;
                         tbody.appendChild(tr);
@@ -691,8 +818,8 @@
                 container.innerHTML = `
                     <div class="bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-2xl p-6">
                         <div class="text-3xl mb-2"><i class="fa-solid fa-circle-check"></i></div>
-                        <p class="font-bold text-sm">คุณชำระเงินเรียบร้อยแล้ว</p>
-                        <p class="text-[10px] opacity-80 mt-1">ขอบคุณที่ร่วมสมทบทุนกองทุนห้องเรียนครับ</p>
+                        <p class="font-bold text-sm">ชำระเงินเสร็จสิ้นแล้ว</p>
+                        <p class="text-[10px] opacity-80 mt-1">ระบบได้ทำการบันทึกข้อมูลการโอนเรียบร้อย</p>
                     </div>
                 `;
             } else {
@@ -702,39 +829,136 @@
 
                 container.innerHTML = `
                     <div class="space-y-4">
-                        <p class="text-xs text-gray-500">สแกนชำระเงินผ่าน Mobile Banking ยอดเงินจะถูกกรอกให้อัตโนมัติ</p>
-                        <div class="bg-white p-2 border-2 border-slate-100 inline-block rounded-2xl shadow-inner mx-auto">
-                            <img src="${qrUrl}" alt="Promptpay QR Code" class="w-44 h-44 mx-auto rounded-xl">
+                        <p class="text-xs text-gray-500">สแกนชำระเงินผ่านระบบ Mobile Banking ตามยอดที่ระบุ</p>
+                        <div class="bg-white p-2 border-2 border-slate-100 inline-block rounded-2xl shadow-inner mx-auto relative group">
+                            <img id="fund-qr-image" src="${qrUrl}" alt="Promptpay QR Code" class="w-44 h-44 mx-auto rounded-xl">
                         </div>
+                        
+                        <!-- ปุ่มดาวน์โหลดคิวอาร์แบบรูปภาพไอคอนสไตล์โมเดิร์น -->
+                        <button onclick="downloadQRCodeImage('${qrUrl}')" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 rounded-xl flex items-center justify-center gap-2 transition shadow-md">
+                            <i class="fa-solid fa-square-arrow-down text-sm"></i> บันทึกรูปภาพ QR
+                        </button>
+
                         <div class="bg-slate-50 rounded-xl p-2.5 border text-center">
                             <p class="text-[10px] text-gray-400 font-bold">ยอดเงินที่ต้องโอน</p>
                             <p class="text-lg font-bold text-slate-800">${money} บาท</p>
                         </div>
-                        <button onclick="submitQrPaymentSuccess()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs shadow transition">
-                            <i class="fa-solid fa-receipt mr-1"></i> โอนเงินสำเร็จแล้ว
+                        
+                        <div class="text-left border border-dashed border-slate-200 p-3 rounded-2xl bg-white">
+                            <label class="text-[10px] font-bold text-slate-500 block mb-1.5"><i class="fa-solid fa-paperclip text-blue-500"></i> แนบหลักฐานสลิปการโอนเงิน (จำเป็น)</label>
+                            <input type="file" id="fund-slip-input" accept="image/*" class="hidden" onchange="handleSlipSelection()">
+                            <button onclick="document.getElementById('fund-slip-input').click()" class="w-full py-2 bg-slate-50 hover:bg-slate-100 border text-slate-600 font-medium rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+                                <i class="fa-solid fa-cloud-arrow-up text-sm"></i> <span id="slip-upload-label">เลือกรูปภาพสลิป</span>
+                            </button>
+                            <div id="slip-preview-container" class="hidden mt-2 border rounded-xl overflow-hidden bg-slate-50 p-1">
+                                <img id="slip-preview-img" src="" class="w-full h-auto max-h-32 object-contain mx-auto rounded-lg">
+                            </div>
+                        </div>
+
+                        <button id="fund-pay-btn" onclick="submitQrPaymentSuccess()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs shadow transition">
+                            <i class="fa-solid fa-receipt mr-1"></i> ยืนยันการโอนเงินสำเร็จ
                         </button>
-                        <p class="text-[9px] text-gray-400 italic">*** หากจ่ายด้วยเงินสด กรุณาติดต่อแอดมินหน้าห้อง ***</p>
+                        <p class="text-[9px] text-gray-400 italic">กรณีชำระด้วยเงินสด โปรดติดต่อกรรมการนักเรียนเพื่อบันทึกข้อมูล</p>
                     </div>
                 `;
+                selectedSlipFile = null;
             }
         }
 
-        async function submitQrPaymentSuccess() {
+        // ฟังก์ชันดาวน์โหลด QR Code เป็นไฟล์ภาพโดยตรงเพื่อความสะดวก
+        async function downloadQRCodeImage(url) {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = `QR_ClassFund_${userData ? userData.student_id : 'payment'}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(blobUrl);
+            } catch (err) {
+                console.error(err);
+                // หากติด CORS จากภายนอก จะใช้แผนสำรองเปิดแท็บใหม่ให้กดค้างบันทึกภาพได้ง่ายๆ แทน
+                window.open(url, '_blank');
+            }
+        }
+
+        function handleSlipSelection() {
+            const input = document.getElementById('fund-slip-input');
+            if (input.files.length === 0) return;
+            
+            selectedSlipFile = input.files[0];
+            document.getElementById('slip-upload-label').innerText = `เปลี่ยนรูป (${(selectedSlipFile.size / 1024).toFixed(1)} KB)`;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('slip-preview-img').src = e.target.result;
+                document.getElementById('slip-preview-container').classList.remove('hidden');
+            }
+            reader.readAsDataURL(selectedSlipFile);
+        }
+
+        function submitQrPaymentSuccess() {
             if(!currentFundConfig || !userData) return;
-            if(!confirm(`ยืนยันว่าคุณโอนเงินจำนวน ${currentFundConfig.amount_per_person} บาท เรียบร้อยแล้วใช่ไหมครับ?`)) return;
+            
+            if(!selectedSlipFile) {
+                return showAlert("แจ้งเตือน", "โปรดเลือกและแนบรูปภาพไฟล์สลิปการโอนเงินเพื่อใช้เป็นหลักฐานก่อนกดปุ่มยืนยัน", "warning");
+            }
+            
+            showAlert(
+                "ยืนยันการทำรายการ", 
+                `คุณต้องการยืนยันการทำรายการโอนเงินสมทบทุนจำนวน ${currentFundConfig.amount_per_person} บาท พร้อมไฟล์แนบหลักฐานใช่หรือไม่?`, 
+                "confirm", 
+                async () => {
+                    const payBtn = document.getElementById('fund-pay-btn');
+                    payBtn.disabled = true;
+                    payBtn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin mr-1"></i> กำลังอัปโหลดสลิปหลักฐาน...`;
 
-            const { error } = await _supabase.from('fund_payments').insert([{
-                fund_id: currentFundConfig.id,
-                student_id: userData.student_id,
-                student_name: userData.name,
-                amount: currentFundConfig.amount_per_person,
-                payment_method: 'qrcode'
-            }]);
+                    let slipPublicUrl = null;
+                    try {
+                        const fileExt = selectedSlipFile.name.split('.').pop();
+                        const uniqueSlipName = `slip_${userData.student_id}_${Date.now()}.${fileExt}`;
 
-            if(!error) {
-                alert("บันทึกการส่งสมทบทุนของคุณเรียบร้อยค๊าบ!");
-                loadFundData();
-            } else { alert("เกิดความผิดพลาดในการส่งข้อมูลการโอน"); }
+                        const { data: uploadData, error: uploadErr } = await _supabase.storage
+                            .from('fund-files') 
+                            .upload(uniqueSlipName, selectedSlipFile);
+
+                        if(uploadErr) throw uploadErr;
+
+                        const { data: urlData } = _supabase.storage.from('fund-files').getPublicUrl(uniqueSlipName);
+                        slipPublicUrl = urlData.publicUrl;
+
+                    } catch (uploadError) {
+                        console.error(uploadError);
+                        showAlert("ข้อผิดพลาด", "การอัปโหลดไฟล์รูปภาพสลิปล้มเหลว กรุณาลองใหม่อีกครั้ง", "error");
+                        payBtn.disabled = false;
+                        payBtn.innerHTML = `<i class="fa-solid fa-receipt mr-1"></i> ยืนยันการโอนเงินสำเร็จ`;
+                        return;
+                    }
+
+                    const { error } = await _supabase.from('fund_payments').insert([{
+                        fund_id: currentFundConfig.id,
+                        student_id: userData.student_id,
+                        student_name: userData.name,
+                        amount: currentFundConfig.amount_per_person,
+                        payment_method: 'qrcode',
+                        slip_url: slipPublicUrl 
+                    }]);
+
+                    if(!error) {
+                        showAlert("สำเร็จ", "ระบบได้รับข้อมูลและสลิปหลักฐานการชำระเงินของท่านเรียบร้อยแล้ว", "success");
+                        selectedSlipFile = null;
+                        loadFundData();
+                    } else { 
+                        showAlert("ข้อผิดพลาด", "ไม่สามารถบันทึกข้อมูลการชำระเงินได้ในขณะนี้", "error"); 
+                        payBtn.disabled = false;
+                        payBtn.innerHTML = `<i class="fa-solid fa-receipt mr-1"></i> ยืนยันการโอนเงินสำเร็จ`;
+                    }
+                }
+            );
         }
 
         async function fetchStudentNameForCash(studentId) {
@@ -748,20 +972,23 @@
             const { data } = await _supabase.from('settings').select('name').eq('student_id', trimmedId).maybeSingle();
             if(data) {
                 resolvedCashStudentName = data.name;
-                previewBox.innerText = `🔍 พบข้อมูล: ${data.name}`;
+                previewBox.innerText = `🟢 พบชื่อนักเรียน: ${data.name}`;
                 previewBox.className = "text-[11px] text-emerald-700 px-2 font-bold bg-emerald-50 py-1.5 rounded-lg border border-emerald-200 min-h-[28px] flex items-center";
             } else {
                 resolvedCashStudentName = "";
-                previewBox.innerText = "❌ ไม่พบรหัสนักเรียนนี้ในระบบ settings";
-                previewBox.className = "text-[11px] text-red-600 px-2 font-medium bg-red-50 py-1.5 rounded-lg border border-red-200 min-h-[28px] flex items-center";
+                previewBox.innerText = "❌ ไม่พบข้อมูลรายชื่อรหัสนี้";
+                previewBox.className = "text-[11px] text-red-600 px-2 font-medium bg-red-50 py-1.5 rounded-lg border border-dashed border-red-200 min-h-[28px] flex items-center";
             }
         }
 
         async function addCashPaymentByAdmin() {
-            if(!currentFundConfig) return alert("ยังไม่มีแคมเปญเปิดให้รับเงินในปัจจุบัน");
-            const targetId = document.getElementById('cash-student-id').value.trim();
-            if(!targetId) return alert("กรุณากรอกรหัสประจำตัวนักเรียนก่อนครับ");
-            if(!resolvedCashStudentName) return alert("ระบบยังไม่พบชื่อของรหัสนักเรียนนี้ กรุณาตรวจสอบรหัสอีกครั้งครับ");
+            if(!currentFundConfig) return showAlert("ข้อผิดพลาด", "โปรดสร้างรอบการเก็บเงินแคมเปญกองทุนห้องก่อน", "error");
+            const inputId = document.getElementById('cash-student-id');
+            const targetId = inputId.value.trim();
+
+            if(!targetId || !resolvedCashStudentName) {
+                return showAlert("แจ้งเตือน", "กรุณาระบุรหัสประจำตัวของนักเรียนที่ถูกต้องและตรวจสอบความถูกต้องของชื่อผู้โอนก่อน", "warning");
+            }
 
             const { error } = await _supabase.from('fund_payments').insert([{
                 fund_id: currentFundConfig.id,
@@ -772,216 +999,217 @@
             }]);
 
             if(!error) {
-                alert(`บันทึกรับเงินสดจากคุณ ${resolvedCashStudentName} สำเร็จเรียบร้อย!`);
-                document.getElementById('cash-student-id').value = '';
-                document.getElementById('cash-name-preview').innerText = "พิมพ์รหัสเพื่อค้นหาชื่อ...";
-                document.getElementById('cash-name-preview').className = "text-[11px] text-slate-500 px-2 font-medium bg-slate-50 py-1.5 rounded-lg border border-dashed border-slate-200 min-h-[28px] flex items-center";
-                resolvedCashStudentName = ""; loadFundData();
-            } else { alert("เกิดข้อผิดพลาดในการบันทึกรับเงินสด"); }
+                showAlert("สำเร็จ", `บันทึกรายการจ่ายเงินสดให้แก่คุณ ${resolvedCashStudentName} เรียบร้อยแล้ว`, "success");
+                inputId.value = ''; fetchStudentNameForCash('');
+                loadFundData();
+            } else { showAlert("ข้อผิดพลาด", "รหัสนักเรียนท่านนี้ถูกบันทึกชำระเงินในรอบนี้ไปแล้ว", "error"); }
         }
 
         async function saveFundConfig() {
             const title = document.getElementById('adm-fund-title').value.trim();
-            const amount = document.getElementById('adm-fund-amount').value.trim();
-            const promptpay = document.getElementById('adm-fund-pp').value.trim();
-            if(!title || !amount || !promptpay) return alert("กรุณากรอกรายละเอียดกองทุนให้ครบครันก่อนบันทึกครับ");
+            const money = document.getElementById('adm-fund-amount').value;
+            const pp = document.getElementById('adm-fund-pp').value.trim();
+            if(!title || !money || !pp) return showAlert("แจ้งเตือน", "กรุณากรอกข้อมูลตัวเลือกกองทุนให้ครบทุกช่องก่อนอัปเดต", "warning");
 
-            const { error } = await _supabase.from('classroom_funds').insert([{
-                title: title, amount_per_person: parseFloat(amount), promptpay_id: promptpay
-            }]);
-            if(!error) { alert("ทำการอัปเดตหัวข้อและยอดรับเงินกองทุนห้องชุดใหม่เรียบร้อยแล้วครับ!"); loadFundData(); } 
-            else { alert("ตั้งค่ากองทุนไม่สำเร็จ"); }
+            const { error } = await _supabase.from('classroom_funds').insert([{ title: title, amount_per_person: parseFloat(money), promptpay_id: pp }]);
+            if(!error) { showAlert("สำเร็จ", "เริ่มต้นแคมเปญระดมทุนและอัปเดตข้อมูลใหม่ของห้องเรียนสำเร็จ", "success"); loadFundData(); }
+            else { showAlert("ข้อผิดพลาด", "ล้มเหลวในการอัปเดตเงื่อนไขการตั้งค่าตารางข้อมูล", "error"); }
         }
 
-        // --- CLASSROOM CHAT SYSTEM ---
+        // --- REALTIME CHAT SYSTEM ---
         async function initChatSystem() {
-            loadChatMessages();
+            const container = document.getElementById('chat-messages-container');
+            container.innerHTML = `<div class="text-center text-gray-400 text-xs py-10"><i class="fa-solid fa-spinner animate-spin mr-1"></i> กำลังโหลดประวัติข้อความสนทนา...</div>`;
+            
+            const { data: list } = await _supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(80);
+            renderChatHistory(list || []);
+            
             if (chatSubscription) _supabase.removeChannel(chatSubscription);
             
             chatSubscription = _supabase.channel('public:messages')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                    appendSingleMessage(payload.new);
-                })
-                .subscribe();
+            .on('postgres_changes', { event: 'INSERT', scheme: 'public', table: 'messages' }, payload => {
+                appendSingleMessage(payload.new);
+            })
+            .subscribe();
         }
 
-        async function loadChatMessages() {
+        function renderChatHistory(msgs) {
             const container = document.getElementById('chat-messages-container');
-            const { data: msgs, error } = await _supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(100);
-            
             container.innerHTML = '';
-            if (error || !msgs || msgs.length === 0) {
-                container.innerHTML = `<div class="text-center text-gray-400 text-xs py-10">เริ่มต้นการแชทกลุ่มห้องเรียนที่นี่...</div>`;
+            if(msgs.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-300 text-xs py-20 font-medium">ยังไม่มีการส่งข้อความ ยิงคำทักทายแรกได้เลย!</div>`;
                 return;
             }
-            msgs.forEach(msg => appendSingleMessage(msg));
+            msgs.forEach(m => appendSingleMessage(m, false));
+            container.scrollTop = container.scrollHeight;
         }
 
-        function urlify(text) {
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            return text.replace(urlRegex, function(url) {
-                return '<a href="' + url + '" target="_blank" class="text-purple-600 underline font-bold break-all">' + url + '</a>';
-            });
-        }
-
-        function appendSingleMessage(msg) {
+        function appendSingleMessage(m, shouldScroll = true) {
             const container = document.getElementById('chat-messages-container');
-            if(container.innerHTML.includes("เริ่มต้นการแชท") || container.innerHTML.includes("กำลังโหลดข้อความ")) container.innerHTML = '';
+            const placeholder = container.querySelector('.text-center');
+            if (placeholder && placeholder.innerText.includes("ยังไม่มีการส่งข้อความ")) { container.innerHTML = ''; }
 
-            const isMe = String(msg.student_id) === String(userData.student_id);
-            const msgCard = document.createElement('div');
-            msgCard.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} w-full animate-pop`;
+            const isMe = String(m.sender_id) === String(userData.student_id);
+            const msgNode = document.createElement('div');
+            msgNode.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-full`;
 
-            let contentHTML = "";
-            if(msg.text_content) {
-                contentHTML += `<p class="text-xs font-medium whitespace-pre-wrap">${urlify(msg.text_content)}</p>`;
+            let contentHTML = `<p class="text-sm font-normal break-words whitespace-pre-wrap leading-relaxed">${m.message || ''}</p>`;
+            if (m.file_url) {
+                const isImg = m.file_url.match(/\.(jpeg|jpg|gif|png|webp)/i);
+                if (isImg) { contentHTML += `<div class="mt-2 rounded-xl overflow-hidden max-w-xs border border-black/5 bg-white"><img src="${m.file_url}" alt="Image" class="w-full h-auto max-h-48 object-cover cursor-pointer" onclick="window.open('${m.file_url}', '_blank')"></div>`; }
+                else { contentHTML += `<a href="${m.file_url}" target="_blank" class="mt-2 inline-flex items-center gap-1.5 px-3 py-2 bg-black/5 hover:bg-black/10 rounded-xl text-xs font-bold text-slate-800 transition"><i class="fa-solid fa-file-arrow-down text-base"></i> ดาวน์โหลดไฟล์แนบ</a>`; }
             }
 
-            if(msg.file_url) {
-                if(msg.file_type && msg.file_type.startsWith('image/')) {
-                    contentHTML += `
-                        <div class="mt-2 rounded-xl overflow-hidden border max-w-xs bg-black/5">
-                            <img src="${msg.file_url}" alt="Shared Image" class="w-full h-auto max-h-60 object-contain cursor-pointer" onclick="window.open('${msg.file_url}', '_blank')">
-                        </div>
-                    `;
-                } else {
-                    contentHTML += `
-                        <a href="${msg.file_url}" target="_blank" class="mt-2 flex items-center gap-2 p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border text-xs font-bold transition w-fit max-w-xs">
-                            <i class="fa-solid fa-file-arrow-down text-base text-purple-600 shrink-0"></i>
-                            <span class="truncate">${msg.file_name || 'ดาวน์โหลดไฟล์'}</span>
-                        </a>
-                    `;
-                }
-            }
-
-            msgCard.innerHTML = `
-                <span class="text-[10px] text-gray-400 font-bold mb-1 px-1">${msg.student_name} ${isMe ? '(คุณ)' : ''}</span>
-                <div class="${isMe ? 'bg-purple-600 text-white rounded-l-2xl rounded-tr-2xl' : 'bg-white text-slate-800 rounded-r-2xl rounded-tl-2xl border'} p-3 shadow-sm max-w-[85%] md:max-w-md">
+            msgNode.innerHTML = `
+                <span class="text-[9px] text-gray-400 font-bold mb-0.5 px-1">${m.sender_name} (${m.sender_id})</span>
+                <div class="px-4 py-2.5 rounded-2xl max-w-[85%] md:max-w-[70%] shadow-sm border ${
+                    isMe 
+                    ? 'bg-purple-600 text-white border-purple-600 rounded-tr-none' 
+                    : 'bg-white text-slate-800 border-slate-100 rounded-tl-none'
+                }">
                     ${contentHTML}
                 </div>
-                <span class="text-[8px] text-gray-300 mt-0.5 px-1">${new Date(msg.created_at).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'})}</span>
+                <span class="text-[8px] text-gray-400 font-medium scale-90 mt-0.5 px-1">${new Date(m.created_at).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'})}</span>
             `;
-            
-            container.appendChild(msgCard);
-            container.scrollTop = container.scrollHeight;
+            container.appendChild(msgNode);
+            if (shouldScroll) container.scrollTop = container.scrollHeight;
         }
 
         function handleFileSelection() {
             const fileInput = document.getElementById('chat-file-input');
-            if(fileInput.files.length === 0) return;
+            if (fileInput.files.length === 0) return;
             selectedChatFile = fileInput.files[0];
-
-            const previewArea = document.getElementById('file-preview-area');
-            const previewName = document.getElementById('file-preview-name');
-            
-            previewName.innerText = `📎 ไฟล์ที่เลือก: ${selectedChatFile.name} (${(selectedChatFile.size/1024).toFixed(1)} KB)`;
-            previewArea.classList.remove('hidden');
+            document.getElementById('file-preview-name').innerText = `📎 แนบไฟล์สำเร็จ: ${selectedChatFile.name} (${(selectedChatFile.size / 1024).toFixed(1)} KB)`;
+            document.getElementById('file-preview-area').classList.remove('hidden');
         }
 
         function clearSelectedFile() {
             selectedChatFile = null;
-            document.getElementById('chat-file-input').value = "";
+            document.getElementById('chat-file-input').value = '';
             document.getElementById('file-preview-area').classList.add('hidden');
         }
 
         async function sendChatMessage() {
-            const textInput = document.getElementById('chat-text-input');
-            const text = textInput.value.trim();
+            const inputTxt = document.getElementById('chat-text-input');
             const sendBtn = document.getElementById('chat-send-btn');
+            const txt = inputTxt.value.trim();
 
-            if (!text && !selectedChatFile) return;
+            if (!txt && !selectedChatFile) return;
 
-            sendBtn.disabled = true;
-            sendBtn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin text-sm"></i>`;
+            inputTxt.disabled = true; sendBtn.disabled = true;
+            let filePublicUrl = null;
 
-            let uploadedUrl = null;
-            let fileName = null;
-            let fileType = null;
+            if (selectedChatFile) {
+                try {
+                    const fileExt = selectedChatFile.name.split('.').pop();
+                    const uniqFileName = `${Date.now()}_${Math.floor(Math.random() * 1000)}.${fileExt}`;
+                    
+                    const { data: uploadData, error: uploadErr } = await _supabase.storage
+                        .from('fund-files') 
+                        .upload(uniqFileName, selectedChatFile);
 
-            if(selectedChatFile) {
-                fileName = selectedChatFile.name;
-                fileType = selectedChatFile.type;
-                const fileExt = fileName.split('.').pop();
-                const uniquePath = `chat_${Date.now()}_${Math.floor(Math.random() * 1000)}.${fileExt}`;
-
-                const { data, error: uploadErr } = await _supabase.storage
-                    .from('chat-files')
-                    .upload(uniquePath, selectedChatFile);
-
-                if (uploadErr) {
-                    alert("การอัปโหลดไฟล์ล้มเหลว: " + uploadErr.message);
-                    sendBtn.disabled = false;
-                    sendBtn.innerHTML = `<i class="fa-solid fa-paper-plane text-sm"></i>`;
-                    return;
+                    if (uploadErr) throw uploadErr;
+                    const { data: urlData } = _supabase.storage.from('fund-files').getPublicUrl(uniqFileName);
+                    filePublicUrl = urlData.publicUrl;
+                } catch (err) {
+                    console.error(err);
+                    showAlert("ข้อผิดพลาด", "ไม่สามารถอัปโหลดไฟล์ที่เลือกแนบได้ในขณะนี้", "error");
+                    inputTxt.disabled = false; sendBtn.disabled = false; return;
                 }
-
-                const { data: urlData } = _supabase.storage.from('chat-files').getPublicUrl(uniquePath);
-                uploadedUrl = urlData.publicUrl;
             }
 
-            const { error: insertErr } = await _supabase.from('messages').insert([{
-                student_id: userData.student_id,
-                student_name: userData.name,
-                text_content: text || null,
-                file_url: uploadedUrl,
-                file_name: fileName,
-                file_type: fileType
+            const { error } = await _supabase.from('messages').insert([{
+                sender_id: userData.student_id, sender_name: userData.name, message: txt, file_url: filePublicUrl
             }]);
 
-            if (insertErr) alert("ส่งข้อความไม่สำเร็จ: " + insertErr.message);
-
-            textInput.value = "";
-            clearSelectedFile();
-            sendBtn.disabled = false;
-            sendBtn.innerHTML = `<i class="fa-solid fa-paper-plane text-sm"></i>`;
+            if (!error) { inputTxt.value = ''; clearSelectedFile(); }
+            inputTxt.disabled = false; sendBtn.disabled = false; inputTxt.focus();
         }
 
-        // --- ADMIN SEAT CONTROLS ---
+        // --- ADMIN CONTROLS SYSTEM ---
         async function openAdmin() {
-            if(!userData || userData.role !== 'admin') return;
+            if(userData.role !== 'admin') return;
             document.getElementById('admin-panel').classList.remove('hidden');
             
             const { data: config } = await _supabase.from('room').select('*').eq('id', 1).maybeSingle();
-            if(config) roomConfig = { ...roomConfig, ...config };
-            
-            const { data: fundCfg } = await _supabase.from('classroom_funds').select('*').order('id', { ascending: false }).limit(1).maybeSingle();
-            if(fundCfg) {
-                document.getElementById('adm-fund-title').value = fundCfg.title;
-                document.getElementById('adm-fund-amount').value = fundCfg.amount_per_person;
-                document.getElementById('adm-fund-pp').value = fundCfg.promptpay_id;
+            if(config) {
+                roomConfig = {
+                    id: 1, rows: config.rows || 8, cols: config.cols || 6,
+                    wall_objects: config.wall_objects || [], blocked_seats: config.blocked_seats || [],
+                    custom_labels: config.custom_labels || {}
+                };
             }
-
             document.getElementById('inp-rows').value = roomConfig.rows;
             document.getElementById('inp-cols').value = roomConfig.cols;
-            resetLayout();
+            
+            if (currentFundConfig) {
+                document.getElementById('adm-fund-title').value = currentFundConfig.title;
+                document.getElementById('adm-fund-amount').value = currentFundConfig.amount_per_person;
+                document.getElementById('adm-fund-pp').value = currentFundConfig.promptpay_id;
+            }
+            
+            renderAdminMap();
+        }
+
+        function renderAdminMap() {
+            const container = document.getElementById('admin-seat-map');
+            container.style.gridTemplateColumns = `repeat(${roomConfig.cols}, minmax(40px, 55px))`;
+            container.innerHTML = '';
+            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+            for(let r=0; r<roomConfig.rows; r++) {
+                for(let c=0; c<roomConfig.cols; c++) {
+                    const defaultID = alphabet[r] + (c+1);
+                    const label = roomConfig.custom_labels[defaultID] || defaultID;
+                    const isBlocked = roomConfig.blocked_seats.includes(defaultID);
+
+                    const div = document.createElement('div');
+                    div.innerText = label;
+                    div.className = `seat ${isBlocked ? 'seat-admin-blocked' : 'seat-vacant border'}`;
+                    
+                    div.onclick = () => {
+                        if(roomConfig.blocked_seats.includes(defaultID)) {
+                            roomConfig.blocked_seats = roomConfig.blocked_seats.filter(id => id !== defaultID);
+                        } else {
+                            roomConfig.blocked_seats.push(defaultID);
+                        }
+                        renderAdminMap();
+                    };
+                    container.appendChild(div);
+                }
+            }
+            renderWalls('admin-wall-container');
         }
 
         function resetLayout() {
-            roomConfig.rows = parseInt(document.getElementById('inp-rows').value) || 1;
-            roomConfig.cols = parseInt(document.getElementById('inp-cols').value) || 1;
-            render('admin-seat-map', 'admin-wall-container', true);
+            roomConfig.rows = parseInt(document.getElementById('inp-rows').value) || 8;
+            roomConfig.cols = parseInt(document.getElementById('inp-cols').value) || 6;
+            roomConfig.blocked_seats = [];
+            renderAdminMap();
         }
 
         async function saveAndCloseAdmin() {
             const btn = document.getElementById('admin-save-btn');
-            btn.innerText = "กำลังบันทึก..."; btn.disabled = true;
+            btn.disabled = true; btn.innerText = "กำลังบันทึกข้อมูล...";
 
-            try {
-                await _supabase.from('room').upsert({
-                    id: 1, rows: roomConfig.rows, cols: roomConfig.cols,
-                    wall_objects: roomConfig.wall_objects, blocked_seats: roomConfig.blocked_seats,
-                    custom_labels: roomConfig.custom_labels
-                });
+            const { error } = await _supabase.from('room').upsert({
+                id: 1, rows: roomConfig.rows, cols: roomConfig.cols,
+                wall_objects: roomConfig.wall_objects, blocked_seats: roomConfig.blocked_seats,
+                custom_labels: roomConfig.custom_labels
+            });
+
+            btn.disabled = false; btn.innerText = "บันทึกข้อมูลทั้งหมด";
+            if(!error) {
                 document.getElementById('admin-panel').classList.add('hidden');
-                alert("บันทึกข้อมูลระบบเรียบร้อยครับ!");
-            } catch(err) { console.error(err); }
-            finally { btn.innerText = "บันทึกข้อมูลทั้งหมด"; btn.disabled = false; loadSeatData(); }
+                showAlert("สำเร็จ", "บันทึกข้อมูลโครงสร้างผังห้องเรียนของระบบเรียบร้อย", "success");
+                goToPage('landing-page');
+            } else { showAlert("ข้อผิดพลาด", "ไม่สามารถติดต่อฐานข้อมูลเพื่อบันทึกโครงสร้างได้", "error"); }
         }
 
         function closeSuccessModal() {
             document.getElementById('success-modal').classList.add('hidden');
-            selectedSeat = null; document.getElementById('display-seat').innerText = "--";
             loadSeatData();
+            goToPage('landing-page');
         }
     </script>
 </body>
