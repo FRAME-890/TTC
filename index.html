@@ -834,7 +834,7 @@
                             <img id="fund-qr-image" src="${qrUrl}" alt="Promptpay QR Code" class="w-44 h-44 mx-auto rounded-xl">
                         </div>
                         
-                        <!-- ปุ่มดาวน์โหลดคิวอาร์แบบรูปภาพไอคอนสไตล์โมเดิร์น -->
+                        <!-- ปุ่มดาวน์โหลดคิวอาร์แบบรูปภาพเซฟตรงลงเครื่องทันที -->
                         <button onclick="downloadQRCodeImage('${qrUrl}')" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 rounded-xl flex items-center justify-center gap-2 transition shadow-md">
                             <i class="fa-solid fa-square-arrow-down text-sm"></i> บันทึกรูปภาพ QR
                         </button>
@@ -865,10 +865,12 @@
             }
         }
 
-        // ฟังก์ชันดาวน์โหลด QR Code เป็นไฟล์ภาพโดยตรงเพื่อความสะดวก
+        // ฟังก์ชันดาวน์โหลด QR Code ลงเครื่องทันทีโดยไม่ติดปัญหาเปิดแท็บใหม่ (ใช้เทคนิค Canvas)
         async function downloadQRCodeImage(url) {
             try {
                 const response = await fetch(url);
+                if (!response.ok) throw new Error('CORS restriction or fetch failed');
+                
                 const blob = await response.blob();
                 const blobUrl = URL.createObjectURL(blob);
                 
@@ -880,9 +882,26 @@
                 document.body.removeChild(link);
                 URL.revokeObjectURL(blobUrl);
             } catch (err) {
-                console.error(err);
-                // หากติด CORS จากภายนอก จะใช้แผนสำรองเปิดแท็บใหม่ให้กดค้างบันทึกภาพได้ง่ายๆ แทน
-                window.open(url, '_blank');
+                console.log("Switching to Base64 Direct Download Canvas Mode...");
+                // แผนสำรอง: ดึงรูปภาพมาเขียนลงผืนผ้าใบ Canvas แล้วดึงค่า Base64 ไปสั่งดาวน์โหลดโดยตรง
+                const img = new Image();
+                img.crossOrigin = 'anonymous'; 
+                img.src = url;
+                img.onload = function () {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    
+                    const base64Url = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = base64Url;
+                    link.download = `QR_ClassFund_${userData ? userData.student_id : 'payment'}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                };
             }
         }
 
