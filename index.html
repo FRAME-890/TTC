@@ -168,7 +168,7 @@
         </div>
         <div class="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-[2rem] p-6 text-white shadow-xl mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
-                <p class="text-xs opacity-80 uppercase tracking-wider font-medium">ยอดเงินกองทุนสะสมรวมทั้งหมด</p>
+                <p class="text-xs opacity-80 uppercase tracking-wider font-medium">ยอดเงินกองทุนสะสมคงเหลือ</p>
                 <h1 id="total-fund-amount" class="text-4xl font-bold mt-1">0.00 <span class="text-lg font-normal">บาท</span></h1>
             </div>
             <div class="flex gap-4 bg-white/10 px-4 py-3 rounded-2xl text-center backdrop-blur-sm">
@@ -181,23 +181,43 @@
                 <p class="text-sm font-bold text-slate-700 border-b pb-2">ช่องทางการชำระเงินของคุณ</p>
                 <div id="user-payment-status-box"></div>
             </div>
-            <div class="md:col-span-2 glass p-6 rounded-3xl border-white shadow-lg space-y-4">
-                <div class="flex justify-between items-center border-b pb-2">
-                    <p class="text-sm font-bold text-slate-700"><i class="fa-solid fa-clipboard-list text-emerald-500 mr-1"></i> ตรวจสอบรายชื่อการสมทบทุน</p>
-                    <span id="fund-target-title" class="text-xs bg-emerald-50 border text-emerald-600 px-3 py-1 rounded-xl font-bold">---</span>
+            <div class="md:col-span-2 glass p-6 rounded-3xl border-white shadow-lg space-y-6">
+                <div>
+                    <div class="flex justify-between items-center border-b pb-2 mb-2">
+                        <p class="text-sm font-bold text-slate-700"><i class="fa-solid fa-clipboard-list text-emerald-500 mr-1"></i> ตรวจสอบรายชื่อการสมทบทุน</p>
+                        <span id="fund-target-title" class="text-xs bg-emerald-50 border text-emerald-600 px-3 py-1 rounded-xl font-bold">---</span>
+                    </div>
+                    <div class="overflow-x-auto max-h-60 custom-scrollbar">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="text-gray-400 border-b">
+                                    <th class="pb-2 font-medium">รหัสประจำตัว</th>
+                                    <th class="pb-2 font-medium">ชื่อ-นามสกุล</th>
+                                    <th class="pb-2 font-medium text-center">จำนวนเงิน</th>
+                                    <th class="pb-2 font-medium text-right">รูปแบบ / หลักฐาน</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payment-history-rows" class="divide-y text-slate-700 font-medium"></tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="text-gray-400 border-b">
-                                <th class="pb-2 font-medium">รหัสประจำตัว</th>
-                                <th class="pb-2 font-medium">ชื่อ-นามสกุล</th>
-                                <th class="pb-2 font-medium text-center">จำนวนเงิน</th>
-                                <th class="pb-2 font-medium text-right">รูปแบบ / หลักฐาน</th>
-                            </tr>
-                        </thead>
-                        <tbody id="payment-history-rows" class="divide-y text-slate-700 font-medium"></tbody>
-                    </table>
+
+                <!-- NEW: รายการประวัติการถอนเงิน/รายจ่ายของห้อง (เพื่อให้เพื่อนๆ สมาชิกเห็น) -->
+                <div class="border-t pt-4">
+                    <p class="text-sm font-bold text-slate-700 mb-2"><i class="fa-solid fa-money-bill-transfer text-red-500 mr-1"></i> ประวัติการใช้จ่ายกองทุนห้อง</p>
+                    <div class="overflow-x-auto max-h-40 custom-scrollbar">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="text-gray-400 border-b">
+                                    <th class="pb-2 font-medium">รายละเอียด</th>
+                                    <th class="pb-2 font-medium text-right">จำนวนเงิน (บาท)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawal-history-rows" class="divide-y text-red-600 font-medium">
+                                <!-- ดึงข้อมูลมาแสดงแบบ Dynamic -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -256,7 +276,7 @@
                         </div>
                     </div>
 
-                    <!-- NEW: Active Bookings Management Dashboard -->
+                    <!-- Active Bookings Management Dashboard -->
                     <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
                         <p class="text-sm font-bold text-slate-700 border-b pb-2"><i class="fa-solid fa-chair text-green-600 mr-1"></i> รายชื่อผู้จองที่นั่งในระบบขณะนี้</p>
                         <div class="overflow-x-auto max-h-60 custom-scrollbar">
@@ -269,14 +289,12 @@
                                         <th class="pb-2 font-medium text-right">การจัดการ</th>
                                     </tr>
                                 </thead>
-                                <tbody id="admin-bookings-rows" class="divide-y text-slate-700 font-medium">
-                                    <!-- Dynamic Rows -->
-                                </tbody>
+                                <tbody id="admin-bookings-rows" class="divide-y text-slate-700 font-medium"></tbody>
                             </table>
                         </div>
                     </div>
 
-                    <!-- NEW: Duty & Homework Master Management Panel -->
+                    <!-- Duty & Homework Master Management Panel -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Duty Configuration Manager -->
                         <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
@@ -284,24 +302,20 @@
                                 <p class="text-sm font-bold text-slate-700"><i class="fa-solid fa-calendar-days text-amber-500 mr-1"></i> จัดการระบบเวรประจำวัน</p>
                                 <button onclick="resetAllDutiesAdmin()" class="bg-red-50 text-red-600 border border-red-200 text-[10px] font-bold px-2.5 py-1 rounded-xl hover:bg-red-100 transition">ล้างข้อมูลเวรทั้งหมด</button>
                             </div>
-                            <div id="admin-duty-list" class="space-y-2 max-h-52 overflow-y-auto custom-scrollbar text-xs">
-                                <!-- Active duty registrations list -->
-                            </div>
+                            <div id="admin-duty-list" class="space-y-2 max-h-52 overflow-y-auto custom-scrollbar text-xs"></div>
                         </div>
 
                         <!-- Homework Master List -->
                         <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
                             <p class="text-sm font-bold text-slate-700 border-b pb-2"><i class="fa-solid fa-book-bookmark text-blue-500 mr-1"></i> รายการภารกิจการบ้านในระบบ</p>
-                            <div id="admin-homework-list" class="space-y-2 max-h-52 overflow-y-auto custom-scrollbar text-xs">
-                                <!-- Active homework entries -->
-                            </div>
+                            <div id="admin-homework-list" class="space-y-2 max-h-52 overflow-y-auto custom-scrollbar text-xs"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Right Column: Fund Manager & Layout Control -->
                 <div class="space-y-6">
-                    <!-- Fund Configuration Module -->
+                    <!-- Fund Configuration & FEATURE: Withdrawal Module -->
                     <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
                         <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b pb-2"><i class="fa-solid fa-wallet text-emerald-500"></i> จัดการระบบกองทุนห้อง</p>
                         <div>
@@ -320,12 +334,23 @@
                         </div>
                         <button onclick="saveFundConfig()" class="w-full bg-emerald-600 text-white text-xs py-2.5 rounded-xl font-bold shadow">อัปเดตแคมเปญเก็บเงิน</button>
                         
+                        <!-- บันทึกเงินสด -->
                         <div class="border-t pt-4">
                             <p class="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-2">🟢 บันทึกคนจ่าย "เงินสด" (สำหรับแอดมิน)</p>
                             <div class="space-y-2">
                                 <input id="cash-student-id" type="text" placeholder="รหัสนักเรียน เช่น 14599" class="w-full bg-slate-50 p-2 text-xs border rounded-xl" oninput="fetchStudentNameForCash(this.value)">
                                 <div id="cash-name-preview" class="text-[11px] text-slate-500 px-2 font-medium bg-slate-50 py-1.5 rounded-lg border border-dashed border-slate-200 min-h-[28px] flex items-center">พิมพ์รหัสเพื่อค้นหาชื่อ...</div>
                                 <button onclick="addCashPaymentByAdmin()" class="w-full bg-orange-500 text-white text-xs py-2 rounded-xl font-bold shadow">บันทึกรับเงินสด</button>
+                            </div>
+                        </div>
+
+                        <!-- NEW ADDITION: ฟีเจอร์ถอนเงิน / บันทึกรายจ่ายกองทุนห้อง -->
+                        <div class="border-t pt-4 bg-red-50/40 p-3 rounded-2xl border border-dashed border-red-200">
+                            <p class="text-[10px] font-bold text-red-600 uppercase tracking-wider mb-2">🔴 บันทึกรายการ "ถอนเงิน / ค่าใช้จ่าย"</p>
+                            <div class="space-y-2">
+                                <input id="withdraw-title" type="text" placeholder="ระบุเหตุผลการถอน เช่น ซื้อกระดาษรายงาน, อุปกรณ์ตกแต่งบอร์ด" class="w-full bg-white p-2 text-xs border rounded-xl outline-none focus:border-red-400">
+                                <input id="withdraw-amount" type="number" placeholder="จำนวนเงินที่ถอน (บาท)" class="w-full bg-white p-2 text-xs border rounded-xl text-center font-bold outline-none focus:border-red-400">
+                                <button onclick="addFundWithdrawalByAdmin()" class="w-full bg-red-500 hover:bg-red-600 text-white text-xs py-2 rounded-xl font-bold shadow transition">ยืนยันบันทึกยอดถอนเงิน</button>
                             </div>
                         </div>
                     </div>
@@ -413,6 +438,7 @@
 
         let currentFundConfig = null;
         let paymentList = [];
+        let withdrawalList = []; // NEW ARRAY: สำหรับเก็บรายการประวัติถอนเงิน
         let resolvedCashStudentName = ""; 
 
         let selectedSlipFile = null; 
@@ -808,23 +834,38 @@
 
                 document.getElementById('fund-target-title').innerText = `${currentFundConfig.title} (${currentFundConfig.amount_per_person} บาท)`;
 
+                // 1. ดึงยอดเงินรายรับ
                 const { data: payments } = await _supabase.from('fund_payments').select('*').eq('fund_id', currentFundConfig.id).order('paid_at', { ascending: false });
                 paymentList = payments || [];
 
-                let totalAmount = 0;
+                // 2. NEW: ดึงยอดเงินที่ถอนออก (รายจ่าย)
+                const { data: withdraws } = await _supabase.from('fund_withdrawals').select('*').eq('fund_id', currentFundConfig.id).order('withdrawn_at', { ascending: false });
+                withdrawalList = withdraws || [];
+
+                let totalIncome = 0;
                 let qrCount = 0;
                 let cashCount = 0;
 
                 paymentList.forEach(p => {
-                    totalAmount += parseFloat(p.amount);
+                    totalIncome += parseFloat(p.amount);
                     if (p.payment_method === 'qrcode') qrCount++;
                     if (p.payment_method === 'cash') cashCount++;
                 });
 
-                document.getElementById('total-fund-amount').innerText = totalAmount.toFixed(2) + " บาท";
+                // คำนวณรายจ่ายทั้งหมด
+                let totalExpense = 0;
+                withdrawalList.forEach(w => {
+                    totalExpense += parseFloat(w.amount);
+                });
+
+                // ยอดเงินสะสมคงเหลือ = รายรับรวม - รายจ่ายรวม
+                let netBalance = totalIncome - totalExpense;
+
+                document.getElementById('total-fund-amount').innerText = netBalance.toFixed(2) + " บาท";
                 document.getElementById('count-qr-payment').innerText = qrCount + " คน";
                 document.getElementById('count-cash-payment').innerText = cashCount + " คน";
 
+                // แสดงตารางรายรับ
                 const tbody = document.getElementById('payment-history-rows');
                 tbody.innerHTML = '';
                 if(paymentList.length === 0) {
@@ -860,6 +901,24 @@
                         tbody.appendChild(tr);
                     });
                 }
+
+                // NEW: เรนเดอร์ตารางประวัติการถอนเงิน (ฝั่งแผงหน้าแอปของนักเรียนทุกคน)
+                const wTbody = document.getElementById('withdrawal-history-rows');
+                wTbody.innerHTML = '';
+                if(withdrawalList.length === 0) {
+                    wTbody.innerHTML = `<tr><td colspan="2" class="text-center py-4 text-gray-400 italic">ยังไม่มีรายการถอนเงิน/รายจ่ายในรอบนี้</td></tr>`;
+                } else {
+                    withdrawalList.forEach(w => {
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b hover:bg-red-50/50";
+                        tr.innerHTML = `
+                            <td class="py-2 text-slate-700 font-medium">${w.title} <span class="block text-[9px] text-gray-400">${new Date(w.withdrawn_at).toLocaleDateString('th-TH')}</span></td>
+                            <td class="py-2 text-right font-bold text-red-500">- ${parseFloat(w.amount).toFixed(2)}</td>
+                        `;
+                        wTbody.appendChild(tr);
+                    });
+                }
+
                 renderUserPaymentStatus();
             } catch (err) { console.error(err); }
         }
@@ -1031,6 +1090,38 @@
                 inputId.value = ''; fetchStudentNameForCash('');
                 loadFundData();
             } else { showAlert("ข้อผิดพลาด", "รหัสนักเรียนท่านนี้ถูกบันทึกชำระเงินในรอบนี้ไปแล้ว", "error"); }
+        }
+
+        // NEW FUNCTION: สำหรับให้แอดมินบันทึกรายการถอนเงิน/เบิกจ่ายกองทุนห้อง
+        async function addFundWithdrawalByAdmin() {
+            if(!currentFundConfig) return showAlert("ข้อผิดพลาด", "โปรดสร้างแคมเปญกองทุนห้องก่อนจึงจะสามารถทำรายการถอนเงินได้", "error");
+            
+            const titleInput = document.getElementById('withdraw-title');
+            const amountInput = document.getElementById('withdraw-amount');
+            
+            const wTitle = titleInput.value.trim();
+            const wAmount = parseFloat(amountInput.value);
+
+            if(!wTitle || !wAmount || wAmount <= 0) {
+                return showAlert("แจ้งเตือน", "กรุณากรอกรายละเอียดเหตุผลของการเบิกจ่าย และจำนวนเงินที่ถูกต้อง (มากกว่า 0 บาท)", "warning");
+            }
+
+            showAlert("ยืนยันการถอนเงิน", `คุณต้องการบันทึกรายการรายจ่ายจำนวน ${wAmount} บาท สำหรับ "${wTitle}" ใช่หรือไม่?`, "confirm", async () => {
+                const { error } = await _supabase.from('fund_withdrawals').insert([{
+                    fund_id: currentFundConfig.id,
+                    title: wTitle,
+                    amount: wAmount
+                }]);
+
+                if(!error) {
+                    showAlert("สำเร็จ", "บันทึกข้อมูลการถอนรายจ่ายออกจากกองทุนเสร็จสิ้น", "success");
+                    titleInput.value = '';
+                    amountInput.value = '';
+                    loadFundData(); // อัปเดตยอดคงเหลือทันที
+                } else {
+                    showAlert("ข้อผิดพลาด", "ไม่สามารถบันทึกรายการรายจ่ายลงระบบฐานข้อมูลได้ในขณะนี้", "error");
+                }
+            });
         }
 
         async function saveFundConfig() {
@@ -1370,7 +1461,6 @@
                     div.innerText = label;
                     div.className = `seat ${isBlocked ? 'seat-admin-blocked' : 'seat-vacant border'}`;
                     
-                    // ดับเบิ้ลคลิก (หรือคลิกสำหรับแอดมิน) เพื่อเปิด/ปิดการบล็อกที่นั่งตรงนั้น
                     div.onclick = () => {
                         if(roomConfig.blocked_seats.includes(defaultID)) {
                             roomConfig.blocked_seats = roomConfig.blocked_seats.filter(id => id !== defaultID);
