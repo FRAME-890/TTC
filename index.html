@@ -131,12 +131,21 @@
     </div>
 
     <!-- Duty Page -->
-    <div id="duty-page" class="hidden w-full max-w-4xl animate-pop px-2">
+    <div id="duty-page" class="hidden w-full max-w-5xl animate-pop px-2 mb-10">
         <div class="flex justify-between items-center mb-6">
             <button onclick="goToPage('landing-page')" class="flex items-center gap-2 text-[#00b272] font-bold text-sm bg-white px-4 py-2 rounded-xl shadow-sm border"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
             <h2 class="text-xl font-bold text-slate-700">จัดเวรประจำวัน</h2>
         </div>
         <div id="duty-grid" class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8"></div>
+
+        <!-- กล่องเช็คชื่อคนทำเวรแบบเรียลไทม์ (เห็นเฉพาะคนที่อยู่เวรวันเดียวกัน) -->
+        <div id="duty-checklist-box" class="hidden glass p-6 rounded-3xl border shadow-lg mt-6 max-w-xl mx-auto">
+            <div class="flex items-center justify-between border-b pb-3 mb-4">
+                <h3 class="text-sm font-bold text-slate-700"><i class="fa-solid fa-list-check text-amber-500 mr-1"></i> ระบบเช็ครายชื่อสมาชิกเวรประจำวันนี้</h3>
+                <span class="text-[10px] bg-amber-50 text-amber-600 font-bold px-2 py-1 rounded-lg">เฉพาะเพื่อนร่วมเวร</span>
+            </div>
+            <div id="my-day-checklist-items" class="space-y-3"></div>
+        </div>
     </div>
 
     <!-- Homework Page -->
@@ -202,7 +211,7 @@
                     </div>
                 </div>
 
-                <!-- NEW: รายการประวัติการถอนเงิน/รายจ่ายของห้อง (เพื่อให้เพื่อนๆ สมาชิกเห็น) -->
+                <!-- รายการประวัติการถอนเงิน/รายจ่ายของห้อง -->
                 <div class="border-t pt-4">
                     <p class="text-sm font-bold text-slate-700 mb-2"><i class="fa-solid fa-money-bill-transfer text-red-500 mr-1"></i> ประวัติการใช้จ่ายกองทุนห้อง</p>
                     <div class="overflow-x-auto max-h-40 custom-scrollbar">
@@ -213,9 +222,7 @@
                                     <th class="pb-2 font-medium text-right">จำนวนเงิน (บาท)</th>
                                 </tr>
                             </thead>
-                            <tbody id="withdrawal-history-rows" class="divide-y text-red-600 font-medium">
-                                <!-- ดึงข้อมูลมาแสดงแบบ Dynamic -->
-                            </tbody>
+                            <tbody id="withdrawal-history-rows" class="divide-y text-red-600 font-medium"></tbody>
                         </table>
                     </div>
                 </div>
@@ -248,7 +255,7 @@
         </div>
     </div>
 
-    <!-- Admin Panel (ALL-IN-ONE MASTER CONTROL) -->
+    <!-- Admin Panel -->
     <div id="admin-panel" class="hidden fixed inset-0 z-[300] bg-[#f8fafc] overflow-y-auto p-4 md:p-8">
         <div class="max-w-6xl mx-auto">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b pb-4">
@@ -262,15 +269,49 @@
                 </div>
             </div>
 
+            <!-- เพิ่ม SECTION สรุปรายงานรายสัปดาห์ (Weekly Duty Report Panel) -->
+            <div class="bg-white p-6 rounded-3xl border shadow-sm mb-8">
+                <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-[#00b272]"></i> แดชบอร์ดสรุปผลการปฏิบัติเวรรายสัปดาห์
+                </h3>
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-2xl text-center border">
+                        <p class="text-[10px] text-gray-400 font-bold">ภาพรวมสัปดาห์</p>
+                        <h4 id="summary-weekly-percent" class="text-2xl font-bold text-blue-600 mt-1">0%</h4>
+                        <span class="text-[9px] text-gray-400 font-medium">สำเร็จทั้งหมด</span>
+                    </div>
+                    <!-- รายวัน -->
+                    <div class="bg-yellow-50/50 p-3 rounded-2xl text-center border border-yellow-100">
+                        <span class="text-[10px] bg-yellow-100 text-yellow-700 font-bold px-2 py-0.5 rounded-md">จันทร์</span>
+                        <p id="summary-mon-count" class="text-lg font-bold text-slate-700 mt-2">0 คน</p>
+                    </div>
+                    <div class="bg-pink-50/50 p-3 rounded-2xl text-center border border-pink-100">
+                        <span class="text-[10px] bg-pink-100 text-pink-700 font-bold px-2 py-0.5 rounded-md">อังคาร</span>
+                        <p id="summary-tue-count" class="text-lg font-bold text-slate-700 mt-2">0 คน</p>
+                    </div>
+                    <div class="bg-green-50/50 p-3 rounded-2xl text-center border border-green-100">
+                        <span class="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded-md">พุธ</span>
+                        <p id="summary-wed-count" class="text-lg font-bold text-slate-700 mt-2">0 คน</p>
+                    </div>
+                    <div class="bg-orange-50/50 p-3 rounded-2xl text-center border border-orange-100">
+                        <span class="text-[10px] bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-md">พฤหัสฯ</span>
+                        <p id="summary-thu-count" class="text-lg font-bold text-slate-700 mt-2">0 คน</p>
+                    </div>
+                    <div class="bg-blue-50/50 p-3 rounded-2xl text-center border border-blue-100">
+                        <span class="text-[10px] bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-md">ศุกร์</span>
+                        <p id="summary-fri-count" class="text-lg font-bold text-slate-700 mt-2">0 คน</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Main Workspace Matrix -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
                 <!-- Left Column: Seat Map & Management -->
                 <div class="lg:col-span-2 space-y-6">
-                    <!-- Seat Map Container -->
                     <div class="glass p-6 md:p-10 rounded-[2.5rem] relative min-h-[400px] flex flex-col items-center overflow-hidden shadow-sm">
                         <p class="text-xs font-bold text-slate-400 mb-4 self-start uppercase tracking-wider"><i class="fa-solid fa-map-location-dot"></i> ดับเบิ้ลคลิกเพื่อบล็อก/ปลดบล็อก ที่นั่งในผัง</p>
-                        <div id="admin-wall-container"></div>
+                        <div id="admin-wall-container" class="absolute inset-0 pointer-events-none"></div>
                         <div class="overflow-x-auto w-full pb-4 custom-scrollbar">
                             <div id="admin-seat-map" class="grid gap-2 mx-auto min-w-fit px-2"></div>
                         </div>
@@ -296,7 +337,6 @@
 
                     <!-- Duty & Homework Master Management Panel -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Duty Configuration Manager -->
                         <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
                             <div class="flex justify-between items-center border-b pb-2">
                                 <p class="text-sm font-bold text-slate-700"><i class="fa-solid fa-calendar-days text-amber-500 mr-1"></i> จัดการระบบเวรประจำวัน</p>
@@ -305,7 +345,6 @@
                             <div id="admin-duty-list" class="space-y-2 max-h-52 overflow-y-auto custom-scrollbar text-xs"></div>
                         </div>
 
-                        <!-- Homework Master List -->
                         <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
                             <p class="text-sm font-bold text-slate-700 border-b pb-2"><i class="fa-solid fa-book-bookmark text-blue-500 mr-1"></i> รายการภารกิจการบ้านในระบบ</p>
                             <div id="admin-homework-list" class="space-y-2 max-h-52 overflow-y-auto custom-scrollbar text-xs"></div>
@@ -315,7 +354,6 @@
 
                 <!-- Right Column: Fund Manager & Layout Control -->
                 <div class="space-y-6">
-                    <!-- Fund Configuration & FEATURE: Withdrawal Module -->
                     <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
                         <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b pb-2"><i class="fa-solid fa-wallet text-emerald-500"></i> จัดการระบบกองทุนห้อง</p>
                         <div>
@@ -344,11 +382,11 @@
                             </div>
                         </div>
 
-                        <!-- NEW ADDITION: ฟีเจอร์ถอนเงิน / บันทึกรายจ่ายกองทุนห้อง -->
+                        <!-- บันทึกรายการถอนเงิน / ค่าใช้จ่ายกองทุนห้อง -->
                         <div class="border-t pt-4 bg-red-50/40 p-3 rounded-2xl border border-dashed border-red-200">
                             <p class="text-[10px] font-bold text-red-600 uppercase tracking-wider mb-2">🔴 บันทึกรายการ "ถอนเงิน / ค่าใช้จ่าย"</p>
                             <div class="space-y-2">
-                                <input id="withdraw-title" type="text" placeholder="ระบุเหตุผลการถอน เช่น ซื้อกระดาษรายงาน, อุปกรณ์ตกแต่งบอร์ด" class="w-full bg-white p-2 text-xs border rounded-xl outline-none focus:border-red-400">
+                                <input id="withdraw-title" type="text" placeholder="ระบุเหตุผลการถอน เช่น ซื้อกระดาษรายงาน" class="w-full bg-white p-2 text-xs border rounded-xl outline-none focus:border-red-400">
                                 <input id="withdraw-amount" type="number" placeholder="จำนวนเงินที่ถอน (บาท)" class="w-full bg-white p-2 text-xs border rounded-xl text-center font-bold outline-none focus:border-red-400">
                                 <button onclick="addFundWithdrawalByAdmin()" class="w-full bg-red-500 hover:bg-red-600 text-white text-xs py-2 rounded-xl font-bold shadow transition">ยืนยันบันทึกยอดถอนเงิน</button>
                             </div>
@@ -364,7 +402,6 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -432,13 +469,14 @@
         
         let dutiesConfig = [];
         let dutyRegistrations = [];
+        let doneChecklistData = []; // ตัวแปรเก็บประวัติการติ๊กเช็คชื่อคนทำเวรสำเร็จ
         
         let homeworkList = [];
         let completedHomeworkIds = [];
 
         let currentFundConfig = null;
         let paymentList = [];
-        let withdrawalList = []; // NEW ARRAY: สำหรับเก็บรายการประวัติถอนเงิน
+        let withdrawalList = []; 
         let resolvedCashStudentName = ""; 
 
         let selectedSlipFile = null; 
@@ -603,10 +641,12 @@
                     const div = document.createElement('div');
                     div.innerText = label;
 
-                    if(isBlocked) div.className = "seat seat-blocked";
+                    if(isBlocked) div.className = `seat ${isAdmin ? 'seat-admin-blocked' : 'seat-blocked'}`;
                     else {
                         div.className = `seat ${isBooked ? 'seat-occupied' : 'seat-vacant border'}`;
-                        if(!isBooked && !isAdmin) {
+                        if(isAdmin) {
+                            div.ondblclick = () => toggleBlockSeatAdmin(defaultID);
+                        } else if(!isBooked) {
                             div.onclick = () => {
                                 document.querySelectorAll('#seat-map .seat').forEach(s => s.classList.remove('seat-selected'));
                                 div.classList.add('seat-selected');
@@ -733,7 +773,13 @@
             dutiesConfig = duties || [];
             const { data: regs } = await _supabase.from('duty_registrations').select('*');
             dutyRegistrations = regs || [];
+            
+            // ดึงข้อมูลสถานะการเช็คเวรล่าสุด
+            const { data: checks } = await _supabase.from('duty_checklist').select('*');
+            doneChecklistData = checks || [];
+
             renderDutyInterface();
+            renderDutyChecklist();
         }
 
         function getDayColorStyle(dayNameEn) {
@@ -808,6 +854,65 @@
             });
         }
 
+        // --- ฟีเจอร์ใหม่: ระบบเช็ครายชื่อเฉพาะคนทำเวรกลุ่มเดียวกัน ---
+        function renderDutyChecklist() {
+            const box = document.getElementById('duty-checklist-box');
+            const container = document.getElementById('my-day-checklist-items');
+            
+            // ค้นหาว่ายูสเซอร์ปัจจุบันลงเวรวันไหนไว้
+            const myRegistration = dutyRegistrations.find(r => String(r.student_id) === String(userData.student_id));
+            
+            if(!myRegistration) {
+                box.classList.add('hidden');
+                return;
+            }
+
+            box.classList.remove('hidden');
+            container.innerHTML = '';
+            
+            const targetDay = myRegistration.day_name_en;
+            // ดึงเฉพาะรายชื่อเพื่อนร่วมเวรวันเดียวกันออกมา
+            const teammates = dutyRegistrations.filter(r => r.day_name_en.toLowerCase() === targetDay.toLowerCase());
+
+            teammates.forEach(tm => {
+                const isChecked = doneChecklistData.some(c => String(c.student_id) === String(tm.student_id) && c.is_done === true);
+                
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-3 bg-slate-50 border rounded-xl hover:bg-white transition shadow-sm";
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 font-bold flex items-center justify-center text-xs">
+                            ${tm.student_name.charAt(0)}
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-800">${tm.student_name}</p>
+                            <p class="text-[10px] text-gray-400">ID: ${tm.student_id}</p>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer select-none">
+                        <input type="checkbox" class="sr-only peer" ${isChecked ? 'checked' : ''} onchange="toggleDutyStatus('${tm.student_id}', '${tm.student_name}', '${targetDay}', this.checked)">
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                        <span class="ml-2 text-xs font-bold text-slate-500 peer-checked:text-green-600">${isChecked ? 'ทำแล้ว' : 'ยังไม่ทำ'}</span>
+                    </label>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        async function toggleDutyStatus(uid, uname, dayEn, isDone) {
+            if(isDone) {
+                await _supabase.from('duty_checklist').insert([{
+                    student_id: uid,
+                    student_name: uname,
+                    day_name_en: dayEn,
+                    is_done: true
+                }]);
+            } else {
+                await _supabase.from('duty_checklist').delete().eq('student_id', uid).eq('day_name_en', dayEn);
+            }
+            loadDutyData();
+        }
+
         async function selectDuty(dayNameEn) {
             await _supabase.from('duty_registrations').insert([{ student_id: userData.student_id, student_name: userData.name, day_name_en: dayNameEn }]);
             showAlert("สำเร็จ", "คุณลงทะเบียนเวรประจำวันเรียบร้อยแล้ว", "success");
@@ -815,6 +920,8 @@
         }
 
         async function cancelDuty() {
+            // ล้างข้อมูลชื่อในเช็คลิสต์ออกด้วยเมื่อยกเลิกเวร
+            await _supabase.from('duty_checklist').delete().eq('student_id', userData.student_id);
             await _supabase.from('duty_registrations').delete().eq('student_id', userData.student_id);
             showAlert("สำเร็จ", "ยกเลิกข้อมูลการลงทะเบียนเวรเรียบร้อยแล้ว", "success");
             loadDutyData();
@@ -834,11 +941,9 @@
 
                 document.getElementById('fund-target-title').innerText = `${currentFundConfig.title} (${currentFundConfig.amount_per_person} บาท)`;
 
-                // 1. ดึงยอดเงินรายรับ
                 const { data: payments } = await _supabase.from('fund_payments').select('*').eq('fund_id', currentFundConfig.id).order('paid_at', { ascending: false });
                 paymentList = payments || [];
 
-                // 2. NEW: ดึงยอดเงินที่ถอนออก (รายจ่าย)
                 const { data: withdraws } = await _supabase.from('fund_withdrawals').select('*').eq('fund_id', currentFundConfig.id).order('withdrawn_at', { ascending: false });
                 withdrawalList = withdraws || [];
 
@@ -852,20 +957,17 @@
                     if (p.payment_method === 'cash') cashCount++;
                 });
 
-                // คำนวณรายจ่ายทั้งหมด
                 let totalExpense = 0;
                 withdrawalList.forEach(w => {
                     totalExpense += parseFloat(w.amount);
                 });
 
-                // ยอดเงินสะสมคงเหลือ = รายรับรวม - รายจ่ายรวม
                 let netBalance = totalIncome - totalExpense;
 
                 document.getElementById('total-fund-amount').innerText = netBalance.toFixed(2) + " บาท";
                 document.getElementById('count-qr-payment').innerText = qrCount + " คน";
                 document.getElementById('count-cash-payment').innerText = cashCount + " คน";
 
-                // แสดงตารางรายรับ
                 const tbody = document.getElementById('payment-history-rows');
                 tbody.innerHTML = '';
                 if(paymentList.length === 0) {
@@ -902,7 +1004,6 @@
                     });
                 }
 
-                // NEW: เรนเดอร์ตารางประวัติการถอนเงิน (ฝั่งแผงหน้าแอปของนักเรียนทุกคน)
                 const wTbody = document.getElementById('withdrawal-history-rows');
                 wTbody.innerHTML = '';
                 if(withdrawalList.length === 0) {
@@ -990,10 +1091,7 @@
 
         function submitQrPaymentSuccess() {
             if(!currentFundConfig || !userData) return;
-            
-            if(!selectedSlipFile) {
-                return showAlert("แจ้งเตือน", "โปรดเลือกและแนบรูปภาพไฟล์สลิปการโอนเงินเพื่อใช้เป็นหลักฐานก่อนกดปุ่มยืนยัน", "warning");
-            }
+            if(!selectedSlipFile) return showAlert("แจ้งเตือน", "โปรดเลือกและแนบรูปภาพไฟล์สลิปการโอนเงินเพื่อใช้เป็นหลักฐานก่อนกดปุ่มยืนยัน", "warning");
             
             showAlert(
                 "ยืนยันการทำรายการ", 
@@ -1092,7 +1190,6 @@
             } else { showAlert("ข้อผิดพลาด", "รหัสนักเรียนท่านนี้ถูกบันทึกชำระเงินในรอบนี้ไปแล้ว", "error"); }
         }
 
-        // NEW FUNCTION: สำหรับให้แอดมินบันทึกรายการถอนเงิน/เบิกจ่ายกองทุนห้อง
         async function addFundWithdrawalByAdmin() {
             if(!currentFundConfig) return showAlert("ข้อผิดพลาด", "โปรดสร้างแคมเปญกองทุนห้องก่อนจึงจะสามารถทำรายการถอนเงินได้", "error");
             
@@ -1117,7 +1214,7 @@
                     showAlert("สำเร็จ", "บันทึกข้อมูลการถอนรายจ่ายออกจากกองทุนเสร็จสิ้น", "success");
                     titleInput.value = '';
                     amountInput.value = '';
-                    loadFundData(); // อัปเดตยอดคงเหลือทันที
+                    loadFundData();
                 } else {
                     showAlert("ข้อผิดพลาด", "ไม่สามารถบันทึกรายการรายจ่ายลงระบบฐานข้อมูลได้ในขณะนี้", "error");
                 }
@@ -1135,6 +1232,7 @@
             else { showAlert("ข้อผิดพลาด", "ล้มเหลวในการอัปเดตเงื่อนไขการตั้งค่าตารางข้อมูล", "error"); }
         }
 
+        // --- VOTE SYSTEM ---
         async function loadVoteData() {
             try {
                 const { data: polls } = await _supabase.from('polls').select('*').order('created_at', { ascending: false });
@@ -1180,7 +1278,6 @@
                 poll.options.forEach((opt, index) => {
                     const optVotesCount = poll.votesData ? poll.votesData.filter(v => v.option_index === index).length : 0;
                     const percent = totalVotesCount > 0 ? ((optVotesCount / totalVotesCount) * 100).toFixed(0) : 0;
-                    
                     const isSelectedOption = myVotedInThisPoll && myVotedInThisPoll.option_index === index;
 
                     optionsHTML += `
@@ -1223,14 +1320,10 @@
             const question = document.getElementById('vote-question').value.trim();
             const rawOptions = document.getElementById('vote-options').value.trim();
             
-            if(!question || !rawOptions) {
-                return showAlert("แจ้งเตือน", "กรุณากรอกหัวข้อคำถามและระบุตัวเลือกให้ครบถ้วน", "warning");
-            }
+            if(!question || !rawOptions) return showAlert("แจ้งเตือน", "กรุณากรอกหัวข้อคำถามและระบุตัวเลือกให้ครบถ้วน", "warning");
 
             const optionsArray = rawOptions.split(',').map(o => o.trim()).filter(o => o.length > 0);
-            if(optionsArray.length < 2) {
-                return showAlert("แจ้งเตือน", "กรุณาใส่ตัวเลือกอย่างน้อย 2 ตัวเลือกขึ้นไป (แยกกันด้วยคอมม่า ,)", "warning");
-            }
+            if(optionsArray.length < 2) return showAlert("แจ้งเตือน", "กรุณาใส่ตัวเลือกอย่างน้อย 2 ตัวเลือกขึ้นไป (แยกกันด้วยคอมม่า ,)", "warning");
 
             const { error } = await _supabase.from('polls').insert([{
                 question: question,
@@ -1254,12 +1347,8 @@
                 student_id: userData.student_id,
                 option_index: optionIndex
             }]);
-
-            if(!error) {
-                loadVoteData();
-            } else {
-                showAlert("ปฏิเสธ", "คุณสิทธิ์ลงคะแนนเสียงไปแล้ว ไม่สามารถแก้ไขหรือโหวตซ้ำได้", "error");
-            }
+            if(!error) loadVoteData();
+            else showAlert("ปฏิเสธ", "คุณสิทธิ์ลงคะแนนเสียงไปแล้ว ไม่สามารถแก้ไขหรือโหวตซ้ำได้", "error");
         }
 
         function deletePoll(pollId) {
@@ -1279,7 +1368,6 @@
             if(userData.role !== 'admin') return;
             document.getElementById('admin-panel').classList.remove('hidden');
             
-            // 1. ดึงข้อมูลผังห้องเรียน
             const { data: config } = await _supabase.from('room').select('*').eq('id', 1).maybeSingle();
             if(config) {
                 roomConfig = {
@@ -1291,7 +1379,6 @@
             document.getElementById('inp-rows').value = roomConfig.rows;
             document.getElementById('inp-cols').value = roomConfig.cols;
             
-            // 2. โหลดข้อมูลกองทุน
             const { data: fundConfig } = await _supabase.from('classroom_funds').select('*').order('id', { ascending: false }).limit(1).maybeSingle();
             currentFundConfig = fundConfig;
             if (currentFundConfig) {
@@ -1300,33 +1387,57 @@
                 document.getElementById('adm-fund-pp').value = currentFundConfig.promptpay_id;
             }
             
-            // 3. โหลดข้อมูลย่อยสำหรับ Master Admin Dashboard
             await loadAdminDashboardData();
-            
             renderAdminMap();
         }
 
         async function loadAdminDashboardData() {
             try {
-                // ดึงรายชื่อการจองที่นั่งทั้งหมด
                 const { data: bookings } = await _supabase.from('bookings').select('*').order('seat_number');
                 fullBookingsData = bookings || [];
                 bookedSeats = fullBookingsData.map(b => b.seat_number);
                 renderAdminBookingsTable();
 
-                // ดึงข้อมูลเวรประจำวันทั้งหมด
                 const { data: duties } = await _supabase.from('duties').select('*').order('id');
                 dutiesConfig = duties || [];
                 const { data: regs } = await _supabase.from('duty_registrations').select('*');
                 dutyRegistrations = regs || [];
-                renderAdminDutyList();
+                
+                const { data: checks } = await _supabase.from('duty_checklist').select('*');
+                doneChecklistData = checks || [];
 
-                // ดึงข้อมูลการบ้านทั้งหมด
+                renderAdminDutyList();
+                calculateWeeklyReportDashboard(); // ฟังก์ชันคำนวณและแสดงผลสรุปรายสัปดาห์
+
                 const { data: hws } = await _supabase.from('homework').select('*').order('deadline', { ascending: true });
                 homeworkList = hws || [];
                 renderAdminHomeworkList();
 
             } catch (err) { console.error("Admin dashboard load error:", err); }
+        }
+
+        // --- ฟีเจอร์ใหม่: คำนวณสรุปสถิติเวรรายสัปดาห์ในหน้าแอดมิน ---
+        function calculateWeeklyReportDashboard() {
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+            let totalRegisteredTeammates = dutyRegistrations.length; 
+            let totalDoneCount = doneChecklistData.filter(c => c.is_done === true).length;
+
+            // อัปเดตตัวเลขแสดงผลรายวันแยกวัน
+            days.forEach(day => {
+                const count = doneChecklistData.filter(c => c.day_name_en.toLowerCase() === day && c.is_done === true).length;
+                const shortDay = day.substring(0, 3);
+                const el = document.getElementById(`summary-${shortDay}-count`);
+                if(el) el.innerText = count + " คน";
+            });
+
+            // คำนวณภาพรวมสัปดาห์เป็นเปอร์เซ็นต์
+            const percentElement = document.getElementById('summary-weekly-percent');
+            if (totalRegisteredTeammates > 0) {
+                const weeklyPercent = ((totalDoneCount / totalRegisteredTeammates) * 100).toFixed(0);
+                percentElement.innerText = weeklyPercent + "%";
+            } else {
+                percentElement.innerText = "0%";
+            }
         }
 
         function renderAdminBookingsTable() {
@@ -1362,7 +1473,9 @@
                     showAlert("สำเร็จ", "ยกเลิกการจองเรียบร้อยแล้ว", "success");
                     await loadAdminDashboardData();
                     renderAdminMap();
-                } else { showAlert("ข้อผิดพลาด", "ล้มเหลวในการลบข้อมูล", "error"); }
+                } else { 
+                    showAlert("ข้อผิดพลาด", "ไม่สามารถลบสิทธิ์การจองได้ในขณะนี้", "error"); 
+                }
             });
         }
 
@@ -1370,42 +1483,56 @@
             const container = document.getElementById('admin-duty-list');
             container.innerHTML = '';
 
-            if(dutyRegistrations.length === 0) {
-                container.innerHTML = `<p class="text-center text-gray-400 italic py-4">ยังไม่มีใครลงทะเบียนเวรประจำวัน</p>`;
-                return;
-            }
+            dutiesConfig.forEach(day => {
+                const workers = dutyRegistrations.filter(r => r.day_name_en.toLowerCase() === day.day_name_en.toLowerCase());
+                const dayBlock = document.createElement('div');
+                dayBlock.className = 'p-3 bg-slate-50 rounded-xl mb-2 border';
+                
+                let workersHTML = '<p class="text-gray-400 italic mt-1">ยังไม่มีผู้ลงทะเบียน</p>';
+                if(workers.length > 0) {
+                    workersHTML = workers.map(w => {
+                        const isDone = doneChecklistData.some(c => String(c.student_id) === String(w.student_id) && c.is_done === true);
+                        return `
+                            <div class="flex justify-between items-center bg-white p-1.5 px-2 rounded-lg border mt-1 font-medium text-slate-700 text-xs">
+                                <span class="flex items-center gap-1.5">
+                                    ${isDone ? '<i class="fa-solid fa-circle-check text-green-500" title="ทำเวรแล้ว"></i>' : '<i class="fa-solid fa-circle-minus text-gray-300" title="ยังไม่ได้ทำเวร"></i>'}
+                                    ${w.student_name}
+                                </span>
+                                <button onclick="removeDutyAdmin('${w.student_id}')" class="text-red-500 font-bold px-1.5 py-0.5 bg-red-50 hover:bg-red-100 rounded-md text-[10px] transition"><i class="fa-solid fa-xmark"></i> เอาออก</button>
+                            </div>
+                        `;
+                    }).join('');
+                }
 
-            dutyRegistrations.forEach(reg => {
-                const dayMatch = dutiesConfig.find(d => d.day_name_en.toLowerCase() === reg.day_name_en.toLowerCase());
-                const dayTh = dayMatch ? dayMatch.day_name_th : reg.day_name_en;
-
-                const item = document.createElement('div');
-                item.className = "flex justify-between items-center bg-slate-50 p-2 rounded-xl border";
-                item.innerHTML = `
-                    <div>
-                        <span class="font-bold text-slate-800">วัน${dayTh}</span>: 
-                        <span class="text-gray-600">${reg.student_name} (${reg.student_id})</span>
+                dayBlock.innerHTML = `
+                    <div class="flex justify-between items-center font-bold text-slate-700 border-b pb-1">
+                        <span>วัน${day.day_name_th} (${workers.length}/${day.max_slots})</span>
                     </div>
-                    <button onclick="removeSingleDutyAdmin('${reg.student_id}')" class="text-red-500 font-bold hover:text-red-700"><i class="fa-solid fa-xmark"></i></button>
+                    <div class="mt-1">${workersHTML}</div>
                 `;
-                container.appendChild(item);
+                container.appendChild(dayBlock);
             });
         }
 
-        async function removeSingleDutyAdmin(studentId) {
-            const { error } = await _supabase.from('duty_registrations').delete().eq('student_id', studentId);
-            if(!error) {
-                await loadAdminDashboardData();
-            }
+        async function removeDutyAdmin(studentId) {
+            showAlert("ยืนยัน", "ต้องการเอารายชื่อนักเรียนคนนี้ออกจากเวรใช่หรือไม่?", "confirm", async () => {
+                await _supabase.from('duty_checklist').delete().eq('student_id', studentId);
+                const { error } = await _supabase.from('duty_registrations').delete().eq('student_id', studentId);
+                if(!error) {
+                    showAlert("สำเร็จ", "ลบรายชื่อออกจากตารางเวรเรียบร้อย", "success");
+                    await loadAdminDashboardData();
+                }
+            });
         }
 
         function resetAllDutiesAdmin() {
-            showAlert("ล้างข้อมูลเวรทั้งหมด", "คุณแน่ใจใช่หรือไม่ว่าต้องการลบรายชื่อสมาชิกเวรประจำวันของทุกวันออกทั้งหมดเพื่อเริ่มสัปดาห์ใหม่?", "confirm", async () => {
-                const { error } = await _supabase.from('duty_registrations').delete().neq('student_id', '0'); // ลบทั้งหมด
+            showAlert("ล้างข้อมูลเวร", "คุณต้องการล้างข้อมูลสมาชิกเวรประจำวันทั้งหมดออกใช่หรือไม่? (ลบถาวร)", "confirm", async () => {
+                await _supabase.from('duty_checklist').delete().neq('student_id', '0');
+                const { error } = await _supabase.from('duty_registrations').delete().neq('student_id', '0');
                 if(!error) {
-                    showAlert("สำเร็จ", "ล้างตารางเวรประจำสัปดาห์เรียบร้อย", "success");
+                    showAlert("สำเร็จ", "ล้างข้อมูลตารางเวรทั้งหมดเสร็จสิ้น", "success");
                     await loadAdminDashboardData();
-                } else { showAlert("ข้อผิดพลาด", "ไม่สามารถล้างข้อมูลได้", "error"); }
+                }
             });
         }
 
@@ -1414,96 +1541,101 @@
             container.innerHTML = '';
 
             if(homeworkList.length === 0) {
-                container.innerHTML = `<p class="text-center text-gray-400 italic py-4">ไม่มีรายการการบ้านในระบบ</p>`;
+                container.innerHTML = '<p class="text-center text-gray-400 italic py-4">ไม่มีภารกิจการบ้านในระบบ</p>';
                 return;
             }
 
             homeworkList.forEach(hw => {
                 const item = document.createElement('div');
-                item.className = "flex justify-between items-start bg-slate-50 p-2 rounded-xl border gap-2";
+                item.className = 'flex justify-between items-start p-2.5 bg-slate-50 rounded-xl border border-slate-100 mb-2 gap-2';
                 item.innerHTML = `
-                    <div class="truncate flex-1">
-                        <span class="font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded text-[10px]">${hw.subject_name}</span>
-                        <p class="text-slate-700 truncate font-medium mt-1">${hw.title}</p>
+                    <div class="truncate">
+                        <p class="font-bold text-slate-800 text-xs truncate">[${hw.subject_name}] ${hw.title}</p>
+                        <p class="text-[10px] text-gray-400 mt-0.5">กำหนดส่ง: ${new Date(hw.deadline).toLocaleDateString('th-TH')}</p>
                     </div>
-                    <button onclick="deleteHomeworkAdmin(${hw.id})" class="text-gray-400 hover:text-red-500 shrink-0 font-bold p-1"><i class="fa-solid fa-trash-can"></i></button>
+                    <button onclick="deleteHomeworkAdmin(${hw.id})" class="text-red-400 hover:text-red-600 font-bold text-sm px-1"><i class="fa-solid fa-trash-can"></i></button>
                 `;
                 container.appendChild(item);
             });
         }
 
-        async function deleteHomeworkAdmin(hwId) {
-            showAlert("ยืนยันการลบ", "คุณต้องการลบรายการการบ้านนี้ออกจากระบบแบบถาวรใช่หรือไม่? (ประวัติการทำเสร็จของเพื่อนๆ จะถูกลบด้วย)", "confirm", async () => {
-                // ลบ Status ก่อนเนื่องจากเป็น Foreign Key
-                await _supabase.from('homework_status').delete().eq('homework_id', hwId);
-                const { error } = await _supabase.from('homework').delete().eq('id', hwId);
-                
+        async function deleteHomeworkAdmin(id) {
+            showAlert("ยืนยันการลบ", "คุณต้องการลบรายการแจ้งการบ้านนี้ออกจากระบบใช่หรือไม่?", "confirm", async () => {
+                await _supabase.from('homework_status').delete().eq('homework_id', id);
+                const { error } = await _supabase.from('homework').delete().eq('id', id);
                 if(!error) {
-                    showAlert("สำเร็จ", "ลบข้อมูลการบ้านเรียบร้อยแล้ว", "success");
+                    showAlert("สำเร็จ", "ลบข้อมูลเรียบร้อยแล้ว", "success");
                     await loadAdminDashboardData();
-                } else { showAlert("ข้อผิดพลาด", "ไม่สามารถลบข้อมูลการบ้านได้", "error"); }
+                }
             });
         }
 
         function renderAdminMap() {
-            const container = document.getElementById('admin-seat-map');
-            container.style.gridTemplateColumns = `repeat(${roomConfig.cols}, minmax(40px, 55px))`;
-            container.innerHTML = '';
-            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            render('admin-seat-map', 'admin-wall-container', true);
+        }
 
-            for(let r=0; r<roomConfig.rows; r++) {
-                for(let c=0; c<roomConfig.cols; c++) {
-                    const defaultID = alphabet[r] + (c+1);
-                    const label = roomConfig.custom_labels[defaultID] || defaultID;
-                    const isBlocked = roomConfig.blocked_seats.includes(defaultID);
-
-                    const div = document.createElement('div');
-                    div.innerText = label;
-                    div.className = `seat ${isBlocked ? 'seat-admin-blocked' : 'seat-vacant border'}`;
-                    
-                    div.onclick = () => {
-                        if(roomConfig.blocked_seats.includes(defaultID)) {
-                            roomConfig.blocked_seats = roomConfig.blocked_seats.filter(id => id !== defaultID);
-                        } else {
-                            roomConfig.blocked_seats.push(defaultID);
-                        }
-                        renderAdminMap();
-                    };
-                    container.appendChild(div);
-                }
+        function toggleBlockSeatAdmin(defaultID) {
+            if (roomConfig.blocked_seats.includes(defaultID)) {
+                roomConfig.blocked_seats = roomConfig.blocked_seats.filter(id => id !== defaultID);
+            } else {
+                roomConfig.blocked_seats.push(defaultID);
             }
-            renderWalls('admin-wall-container');
+            renderAdminMap();
         }
 
         function resetLayout() {
-            roomConfig.rows = parseInt(document.getElementById('inp-rows').value) || 8;
-            roomConfig.cols = parseInt(document.getElementById('inp-cols').value) || 6;
-            roomConfig.blocked_seats = [];
+            const r = parseInt(document.getElementById('inp-rows').value) || 8;
+            const c = parseInt(document.getElementById('inp-cols').value) || 6;
+            roomConfig.rows = r;
+            roomConfig.cols = c;
             renderAdminMap();
         }
 
         async function saveAndCloseAdmin() {
-            const btn = document.getElementById('admin-save-btn');
-            btn.disabled = true; btn.innerText = "กำลังบันทึกข้อมูล...";
+            const saveBtn = document.getElementById('admin-save-btn');
+            saveBtn.disabled = true;
+            saveBtn.innerText = "กำลังบันทึกข้อมูล...";
 
-            const { error } = await _supabase.from('room').upsert({
-                id: 1, rows: roomConfig.rows, cols: roomConfig.cols,
-                wall_objects: roomConfig.wall_objects, blocked_seats: roomConfig.blocked_seats,
+            const { error } = await _supabase.from('room').update({
+                rows: roomConfig.rows,
+                cols: roomConfig.cols,
+                blocked_seats: roomConfig.blocked_seats,
+                wall_objects: roomConfig.wall_objects,
                 custom_labels: roomConfig.custom_labels
-            });
+            }).eq('id', 1);
 
-            btn.disabled = false; btn.innerText = "บันทึกข้อมูลทั้งหมด";
+            saveBtn.disabled = false;
+            saveBtn.innerText = "บันทึกโครงสร้างผังที่นั่ง";
+
             if(!error) {
+                showAlert("สำเร็จ", "บันทึกแก้ไขผังห้องเรียนและมิติตารางเรียบร้อยแล้ว", "success");
                 document.getElementById('admin-panel').classList.add('hidden');
-                showAlert("สำเร็จ", "บันทึกข้อมูลโครงสร้างผังห้องเรียนของระบบเรียบร้อย", "success");
                 goToPage('landing-page');
-            } else { showAlert("ข้อผิดพลาด", "ไม่สามารถติดต่อฐานข้อมูลเพื่อบันทึกโครงสร้างได้", "error"); }
+            } else {
+                showAlert("ข้อผิดพลาด", "ล้มเหลวในการบันทึกข้อมูลลงฐานข้อมูล", "error");
+            }
+        }
+
+        // --- MISC MODAL CONTROLS ---
+        let tempSide = 'left';
+        function updateSideUI() {
+            document.getElementById('side-left').className = tempSide === 'left' ? 'flex-1 py-3 rounded-xl font-bold text-sm bg-slate-800 text-white' : 'flex-1 py-3 rounded-xl font-bold text-sm text-slate-500';
+            document.getElementById('side-right').className = tempSide === 'right' ? 'flex-1 py-3 rounded-xl font-bold text-sm bg-slate-800 text-white' : 'flex-1 py-3 rounded-xl font-bold text-sm text-slate-500';
+        }
+
+        function confirmAddObj() {
+            const pos = document.getElementById('obj-pos').value;
+            if(!roomConfig.wall_objects) roomConfig.wall_objects = [];
+            roomConfig.wall_objects.push({ type: 'window', side: tempSide, top: pos });
+            document.getElementById('obj-modal').classList.add('hidden');
+            renderAdminMap();
         }
 
         function closeSuccessModal() {
             document.getElementById('success-modal').classList.add('hidden');
+            selectedSeat = null;
+            document.getElementById('display-seat').innerText = '--';
             loadSeatData();
-            goToPage('landing-page');
         }
     </script>
 </body>
