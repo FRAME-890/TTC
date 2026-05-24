@@ -49,7 +49,6 @@
 </head>
 <body class="min-h-screen flex flex-col items-center p-2 overflow-x-hidden">
 
-    <!-- Navbar -->
     <div id="nav" class="w-full max-w-4xl flex justify-between items-center mb-4 mt-1 px-2 hidden">
         <div id="admin-trigger" onclick="openAdmin()" class="glass px-4 py-2 rounded-2xl cursor-pointer shadow-sm border-white hidden">
             <div class="flex flex-col items-start leading-tight">
@@ -67,7 +66,6 @@
         <button onclick="logout()" class="text-[10px] font-bold text-gray-400 uppercase hover:text-red-500">ออกจากระบบ</button>
     </div>
 
-    <!-- Login Page -->
     <div id="login-page" class="mt-10 md:mt-20 glass p-8 md:p-10 rounded-[2.5rem] shadow-2xl text-center w-full max-w-sm border-white animate-pop mx-4">
         <div class="bg-[#00b272] w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 text-white text-2xl shadow-lg shadow-green-200"><i class="fa-solid fa-user-shield"></i></div>
         <h2 class="text-xl font-bold mb-6 text-slate-800">เข้าสู่ระบบห้องเรียน</h2>
@@ -75,7 +73,6 @@
         <button onclick="doLogin()" class="w-full bg-[#00b272] text-white py-4 rounded-xl font-bold shadow-lg shadow-green-100 hover:bg-[#009661] transition active:scale-95">เข้าสู่ระบบ</button>
     </div>
 
-    <!-- Landing Menu Page -->
     <div id="landing-page" class="hidden w-full max-w-5xl px-4 py-8 animate-pop">
         <div class="text-center mb-10">
             <h1 class="text-3xl font-bold text-slate-800">ยินดีต้อนรับ</h1>
@@ -106,7 +103,6 @@
         </div>
     </div>
 
-    <!-- Seat Booking Page -->
     <div id="main-app" class="hidden w-full max-w-6xl animate-pop px-2">
         <div class="flex justify-between items-center mb-6 max-w-4xl mx-auto">
             <button onclick="goToPage('landing-page')" class="flex items-center gap-2 text-[#00b272] font-bold text-sm bg-white px-4 py-2 rounded-xl shadow-sm border"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
@@ -130,25 +126,31 @@
         </div>
     </div>
 
-    <!-- Duty Page -->
     <div id="duty-page" class="hidden w-full max-w-5xl animate-pop px-2 mb-10">
         <div class="flex justify-between items-center mb-6">
             <button onclick="goToPage('landing-page')" class="flex items-center gap-2 text-[#00b272] font-bold text-sm bg-white px-4 py-2 rounded-xl shadow-sm border"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
-            <h2 class="text-xl font-bold text-slate-700">จัดเวรประจำวัน</h2>
+            <h2 class="text-xl font-bold text-slate-700">ระบบจัดเวรประจำวัน</h2>
         </div>
-        <div id="duty-grid" class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8"></div>
 
-        <!-- กล่องเช็คชื่อคนทำเวรแบบเรียลไทม์ (เห็นเฉพาะคนที่อยู่เวรวันเดียวกัน) -->
-        <div id="duty-checklist-box" class="hidden glass p-6 rounded-3xl border shadow-lg mt-6 max-w-xl mx-auto">
+        <div id="duty-checklist-box" class="hidden glass p-6 rounded-3xl border shadow-lg mb-8 max-w-xl mx-auto">
             <div class="flex items-center justify-between border-b pb-3 mb-4">
-                <h3 class="text-sm font-bold text-slate-700"><i class="fa-solid fa-list-check text-amber-500 mr-1"></i> ระบบเช็ครายชื่อสมาชิกเวรประจำวันนี้</h3>
-                <span class="text-[10px] bg-amber-50 text-amber-600 font-bold px-2 py-1 rounded-lg">เฉพาะเพื่อนร่วมเวร</span>
+                <h3 class="text-sm font-bold text-slate-700"><i class="fa-solid fa-list-check text-amber-500 mr-1"></i> ตรวจสอบและเช็คชื่อคนทำเวรวันนี้</h3>
+                <span id="current-day-badge" class="text-[10px] bg-amber-50 text-amber-600 font-bold px-2 py-1 rounded-lg">---</span>
             </div>
-            <div id="my-day-checklist-items" class="space-y-3"></div>
+            
+            <div id="my-day-checklist-items" class="space-y-3 mb-5"></div>
+
+            <button onclick="submitDutyReport()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-2xl text-xs shadow-md transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-square-check"></i> บันทึกผลและคัดลอกรายชื่อส่งกลุ่ม
+            </button>
+        </div>
+
+        <div id="duty-grid-section" class="space-y-4">
+            <h3 class="text-sm font-bold text-slate-600 px-1"><i class="fa-solid fa-calendar-days text-[#00b272] mr-1"></i> ตารางสมาชิกลงทะเบียนเวรประจำวัน</h3>
+            <div id="duty-grid" class="grid grid-cols-1 md:grid-cols-5 gap-4"></div>
         </div>
     </div>
 
-    <!-- Homework Page -->
     <div id="homework-page" class="hidden w-full max-w-5xl animate-pop px-2 mb-10">
         <div class="flex justify-between items-center mb-6">
             <button onclick="goToPage('landing-page')" class="flex items-center gap-2 text-[#00b272] font-bold text-sm bg-white px-4 py-2 rounded-xl shadow-sm border"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
@@ -169,7 +171,6 @@
         </div>
     </div>
 
-    <!-- Fund Page -->
     <div id="fund-page" class="hidden w-full max-w-4xl animate-pop px-2 mb-10">
         <div class="flex justify-between items-center mb-6">
             <button onclick="goToPage('landing-page')" class="flex items-center gap-2 text-[#00b272] font-bold text-sm bg-white px-4 py-2 rounded-xl shadow-sm border"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
@@ -211,7 +212,6 @@
                     </div>
                 </div>
 
-                <!-- รายการประวัติการถอนเงิน/รายจ่ายของห้อง -->
                 <div class="border-t pt-4">
                     <p class="text-sm font-bold text-slate-700 mb-2"><i class="fa-solid fa-money-bill-transfer text-red-500 mr-1"></i> ประวัติการใช้จ่ายกองทุนห้อง</p>
                     <div class="overflow-x-auto max-h-40 custom-scrollbar">
@@ -230,7 +230,6 @@
         </div>
     </div>
 
-    <!-- Vote Page -->
     <div id="vote-page" class="hidden w-full max-w-5xl animate-pop px-2 mb-10">
         <div class="flex justify-between items-center mb-6">
             <button onclick="goToPage('landing-page')" class="flex items-center gap-2 text-[#00b272] font-bold text-sm bg-white px-4 py-2 rounded-xl shadow-sm border"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
@@ -255,7 +254,6 @@
         </div>
     </div>
 
-    <!-- Admin Panel -->
     <div id="admin-panel" class="hidden fixed inset-0 z-[300] bg-[#f8fafc] overflow-y-auto p-4 md:p-8">
         <div class="max-w-6xl mx-auto">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b pb-4">
@@ -269,7 +267,6 @@
                 </div>
             </div>
 
-            <!-- เพิ่ม SECTION สรุปรายงานรายสัปดาห์ (Weekly Duty Report Panel) -->
             <div class="bg-white p-6 rounded-3xl border shadow-sm mb-8">
                 <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
                     <i class="fa-solid fa-chart-pie text-[#00b272]"></i> แดชบอร์ดสรุปผลการปฏิบัติเวรรายสัปดาห์
@@ -280,7 +277,6 @@
                         <h4 id="summary-weekly-percent" class="text-2xl font-bold text-blue-600 mt-1">0%</h4>
                         <span class="text-[9px] text-gray-400 font-medium">สำเร็จทั้งหมด</span>
                     </div>
-                    <!-- รายวัน -->
                     <div class="bg-yellow-50/50 p-3 rounded-2xl text-center border border-yellow-100">
                         <span class="text-[10px] bg-yellow-100 text-yellow-700 font-bold px-2 py-0.5 rounded-md">จันทร์</span>
                         <p id="summary-mon-count" class="text-lg font-bold text-slate-700 mt-2">0 คน</p>
@@ -304,10 +300,7 @@
                 </div>
             </div>
 
-            <!-- Main Workspace Matrix -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                <!-- Left Column: Seat Map & Management -->
                 <div class="lg:col-span-2 space-y-6">
                     <div class="glass p-6 md:p-10 rounded-[2.5rem] relative min-h-[400px] flex flex-col items-center overflow-hidden shadow-sm">
                         <p class="text-xs font-bold text-slate-400 mb-4 self-start uppercase tracking-wider"><i class="fa-solid fa-map-location-dot"></i> ดับเบิ้ลคลิกเพื่อบล็อก/ปลดบล็อก ที่นั่งในผัง</p>
@@ -317,7 +310,6 @@
                         </div>
                     </div>
 
-                    <!-- Active Bookings Management Dashboard -->
                     <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
                         <p class="text-sm font-bold text-slate-700 border-b pb-2"><i class="fa-solid fa-chair text-green-600 mr-1"></i> รายชื่อผู้จองที่นั่งในระบบขณะนี้</p>
                         <div class="overflow-x-auto max-h-60 custom-scrollbar">
@@ -326,7 +318,6 @@
                                     <tr class="text-gray-400 border-b">
                                         <th class="pb-2 font-medium">ที่นั่ง</th>
                                         <th class="pb-2 font-medium">รหัสนักเรียน</th>
-                                        <th class="pb-2 font-medium">ชื่อ-นามสกุล</th>
                                         <th class="pb-2 font-medium text-right">การจัดการ</th>
                                     </tr>
                                 </thead>
@@ -335,7 +326,6 @@
                         </div>
                     </div>
 
-                    <!-- Duty & Homework Master Management Panel -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
                             <div class="flex justify-between items-center border-b pb-2">
@@ -352,7 +342,6 @@
                     </div>
                 </div>
 
-                <!-- Right Column: Fund Manager & Layout Control -->
                 <div class="space-y-6">
                     <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
                         <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b pb-2"><i class="fa-solid fa-wallet text-emerald-500"></i> จัดการระบบกองทุนห้อง</p>
@@ -372,7 +361,6 @@
                         </div>
                         <button onclick="saveFundConfig()" class="w-full bg-emerald-600 text-white text-xs py-2.5 rounded-xl font-bold shadow">อัปเดตแคมเปญเก็บเงิน</button>
                         
-                        <!-- บันทึกเงินสด -->
                         <div class="border-t pt-4">
                             <p class="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-2">🟢 บันทึกคนจ่าย "เงินสด" (สำหรับแอดมิน)</p>
                             <div class="space-y-2">
@@ -382,7 +370,6 @@
                             </div>
                         </div>
 
-                        <!-- บันทึกรายการถอนเงิน / ค่าใช้จ่ายกองทุนห้อง -->
                         <div class="border-t pt-4 bg-red-50/40 p-3 rounded-2xl border border-dashed border-red-200">
                             <p class="text-[10px] font-bold text-red-600 uppercase tracking-wider mb-2">🔴 บันทึกรายการ "ถอนเงิน / ค่าใช้จ่าย"</p>
                             <div class="space-y-2">
@@ -393,7 +380,6 @@
                         </div>
                     </div>
 
-                    <!-- Layout Dimensions Configuration Map -->
                     <div class="bg-white p-6 rounded-3xl border shadow-sm">
                         <p class="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-widest"><i class="fa-solid fa-table-cells"></i> ตั้งค่ามิติตารางผังที่นั่ง</p>
                         <div class="grid grid-cols-2 gap-4">
@@ -406,7 +392,27 @@
         </div>
     </div>
 
-    <!-- Modals -->
+    <div id="copy-report-modal" class="hidden fixed inset-0 z-[650] bg-black/50 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass max-w-sm w-full p-6 rounded-[2.5rem] shadow-2xl animate-pop text-center">
+            <div class="w-14 h-14 bg-amber-500 text-white rounded-full flex items-center justify-center mx-auto mb-3 text-2xl shadow-lg shadow-amber-100">
+                <i class="fa-solid fa-copy"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800">สรุปรายงานเวรประจำวัน</h3>
+            <p class="text-xs text-slate-400 mt-0.5">ระบบทำการบันทึกประวัติสำเร็จ คุณสามารถคัดลอกข้อความด้านล่างเพื่อส่งเข้ากลุ่มได้ทันที</p>
+            
+            <textarea id="report-text-output" readonly class="w-full mt-4 p-3 bg-slate-50 border rounded-2xl text-xs font-mono h-40 outline-none resize-none text-slate-700"></textarea>
+            
+            <div class="grid grid-cols-2 gap-3 mt-5">
+                <button onclick="document.getElementById('copy-report-modal').classList.add('hidden')" class="py-3 bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold rounded-xl text-xs transition">
+                    ปิดหน้าต่าง
+                </button>
+                <button onclick="executeCopyText()" class="py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs shadow transition">
+                    คัดลอกข้อความ
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="obj-modal" class="hidden fixed inset-0 z-[500] bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
         <div class="glass max-w-sm w-full p-8 rounded-[2.5rem] shadow-2xl animate-pop">
             <h3 class="text-xl font-bold mb-6 text-center">เพิ่มวัตถุ</h3>
@@ -469,7 +475,8 @@
         
         let dutiesConfig = [];
         let dutyRegistrations = [];
-        let doneChecklistData = []; // ตัวแปรเก็บประวัติการติ๊กเช็คชื่อคนทำเวรสำเร็จ
+        let localChecklistState = {}; // เก็บสถานะติ๊กชั่วคราวบนหน้าเว็บ { student_id: true/false }
+        let doneChecklistData = []; 
         
         let homeworkList = [];
         let completedHomeworkIds = [];
@@ -773,13 +780,8 @@
             dutiesConfig = duties || [];
             const { data: regs } = await _supabase.from('duty_registrations').select('*');
             dutyRegistrations = regs || [];
-            
-            // ดึงข้อมูลสถานะการเช็คเวรล่าสุด
-            const { data: checks } = await _supabase.from('duty_checklist').select('*');
-            doneChecklistData = checks || [];
 
             renderDutyInterface();
-            renderDutyChecklist();
         }
 
         function getDayColorStyle(dayNameEn) {
@@ -799,6 +801,20 @@
             
             const myReg = dutyRegistrations.find(r => String(r.student_id) === String(userData.student_id));
             const mySelectedDay = myReg ? myReg.day_name_en.toLowerCase() : null;
+
+            const checklistBox = document.getElementById('duty-checklist-box');
+            const gridSection = document.getElementById('duty-grid-section');
+
+            if (myReg) {
+                checklistBox.classList.remove('hidden');
+                gridSection.classList.remove('hidden'); 
+                
+                document.getElementById('current-day-badge').innerText = `วัน${myReg.day_name_th || myReg.day_name_en}`;
+                renderDutyChecklist(myReg.day_name_en, myReg.day_name_th);
+            } else {
+                checklistBox.classList.add('hidden');
+                gridSection.classList.remove('hidden');
+            }
 
             dutiesConfig.forEach(day => {
                 const currentDayEn = day.day_name_en.toLowerCase();
@@ -854,28 +870,18 @@
             });
         }
 
-        // --- ฟีเจอร์ใหม่: ระบบเช็ครายชื่อเฉพาะคนทำเวรกลุ่มเดียวกัน ---
-        function renderDutyChecklist() {
-            const box = document.getElementById('duty-checklist-box');
+        function renderDutyChecklist(targetDayEn, targetDayTh) {
             const container = document.getElementById('my-day-checklist-items');
-            
-            // ค้นหาว่ายูสเซอร์ปัจจุบันลงเวรวันไหนไว้
-            const myRegistration = dutyRegistrations.find(r => String(r.student_id) === String(userData.student_id));
-            
-            if(!myRegistration) {
-                box.classList.add('hidden');
-                return;
-            }
-
-            box.classList.remove('hidden');
             container.innerHTML = '';
             
-            const targetDay = myRegistration.day_name_en;
-            // ดึงเฉพาะรายชื่อเพื่อนร่วมเวรวันเดียวกันออกมา
-            const teammates = dutyRegistrations.filter(r => r.day_name_en.toLowerCase() === targetDay.toLowerCase());
+            const teammates = dutyRegistrations.filter(r => r.day_name_en.toLowerCase() === targetDayEn.toLowerCase());
 
             teammates.forEach(tm => {
-                const isChecked = doneChecklistData.some(c => String(c.student_id) === String(tm.student_id) && c.is_done === true);
+                if (localChecklistState[tm.student_id] === undefined) {
+                    localChecklistState[tm.student_id] = true; 
+                }
+
+                const isChecked = localChecklistState[tm.student_id];
                 
                 const item = document.createElement('div');
                 item.className = "flex items-center justify-between p-3 bg-slate-50 border rounded-xl hover:bg-white transition shadow-sm";
@@ -890,27 +896,71 @@
                         </div>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer select-none">
-                        <input type="checkbox" class="sr-only peer" ${isChecked ? 'checked' : ''} onchange="toggleDutyStatus('${tm.student_id}', '${tm.student_name}', '${targetDay}', this.checked)">
+                        <input type="checkbox" class="sr-only peer" ${isChecked ? 'checked' : ''} onchange="localChecklistState['${tm.student_id}'] = this.checked; updateLocalCheckLabel('${tm.student_id}', this.checked)">
                         <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                        <span class="ml-2 text-xs font-bold text-slate-500 peer-checked:text-green-600">${isChecked ? 'ทำแล้ว' : 'ยังไม่ทำ'}</span>
+                        <span id="chk-lbl-${tm.student_id}" class="ml-2 text-xs font-bold ${isChecked ? 'text-green-600' : 'text-red-500'}">${isChecked ? 'ทำแล้ว' : 'ไม่ทำเวร'}</span>
                     </label>
                 `;
                 container.appendChild(item);
             });
         }
 
-        async function toggleDutyStatus(uid, uname, dayEn, isDone) {
-            if(isDone) {
-                await _supabase.from('duty_checklist').insert([{
-                    student_id: uid,
-                    student_name: uname,
-                    day_name_en: dayEn,
-                    is_done: true
-                }]);
+        function updateLocalCheckLabel(uid, isChecked) {
+            const lbl = document.getElementById(`chk-lbl-${uid}`);
+            if(!lbl) return;
+            if(isChecked) {
+                lbl.innerText = "ทำแล้ว"; lbl.className = "ml-2 text-xs font-bold text-green-600";
             } else {
-                await _supabase.from('duty_checklist').delete().eq('student_id', uid).eq('day_name_en', dayEn);
+                lbl.innerText = "ไม่ทำเวร"; lbl.className = "ml-2 text-xs font-bold text-red-500";
             }
-            loadDutyData();
+        }
+
+        // ปุ่มกดเสร็จสิ้น -> ทำการบันทึกข้อมูลซ้ำลง database สตรีมไปเรื่อยๆ + สรุปผลคัดลอกรายชื่อขึ้นป๊อปอัป [แก้ไขคอลัมน์เวลาสำหรับ Trigger เรียบร้อย]
+        async function submitDutyReport() {
+            const myReg = dutyRegistrations.find(r => String(r.student_id) === String(userData.student_id));
+            if(!myReg) return;
+
+            const teammates = dutyRegistrations.filter(r => r.day_name_en.toLowerCase() === myReg.day_name_en.toLowerCase());
+            
+            let textOutputArray = [];
+            let insertRows = [];
+            const currentTimeIso = new Date().toISOString(); 
+
+            teammates.forEach((tm, idx) => {
+                const status = localChecklistState[tm.student_id] !== false; 
+                const statusText = status ? "ทำเวร" : "ไม่ทำเวร";
+                
+                textOutputArray.push(`${idx + 1}.${tm.student_name} ${statusText}`);
+
+                insertRows.push({
+                    student_id: tm.student_id,
+                    student_name: tm.student_name,
+                    day_name_en: myReg.day_name_en,
+                    is_done: status,
+                    created_at: currentTimeIso 
+                });
+            });
+
+            const { error } = await _supabase.from('duty_checklist').insert(insertRows);
+            
+            if(error) {
+                console.error("Database append log error: ", error);
+                return showAlert("ข้อผิดพลาด", "ไม่สามารถบันทึกรายงานได้ เนื่องจากระบบสัปดาห์นี้ถูกบันทึกไปแล้ว หรือเกิดข้อผิดพลาดภายในระบบฐานข้อมูล", "error");
+            }
+
+            const reportString = textOutputArray.join('\n');
+            document.getElementById('report-text-output').value = reportString;
+            document.getElementById('copy-report-modal').classList.remove('hidden');
+        }
+
+        function executeCopyText() {
+            const copyText = document.getElementById('report-text-output');
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); 
+            navigator.clipboard.writeText(copyText.value);
+            
+            showAlert("คัดลอกสำเร็จ", "บันทึกและคัดลอกรายงานรายชื่อไปยังคลิปบอร์ดของคุณเรียบร้อยแล้ว!", "success");
+            document.getElementById('copy-report-modal').classList.add('hidden');
         }
 
         async function selectDuty(dayNameEn) {
@@ -920,10 +970,9 @@
         }
 
         async function cancelDuty() {
-            // ล้างข้อมูลชื่อในเช็คลิสต์ออกด้วยเมื่อยกเลิกเวร
-            await _supabase.from('duty_checklist').delete().eq('student_id', userData.student_id);
             await _supabase.from('duty_registrations').delete().eq('student_id', userData.student_id);
             showAlert("สำเร็จ", "ยกเลิกข้อมูลการลงทะเบียนเวรเรียบร้อยแล้ว", "success");
+            localChecklistState = {}; 
             loadDutyData();
         }
 
@@ -1407,7 +1456,7 @@
                 doneChecklistData = checks || [];
 
                 renderAdminDutyList();
-                calculateWeeklyReportDashboard(); // ฟังก์ชันคำนวณและแสดงผลสรุปรายสัปดาห์
+                calculateWeeklyReportDashboard(); 
 
                 const { data: hws } = await _supabase.from('homework').select('*').order('deadline', { ascending: true });
                 homeworkList = hws || [];
@@ -1416,13 +1465,11 @@
             } catch (err) { console.error("Admin dashboard load error:", err); }
         }
 
-        // --- ฟีเจอร์ใหม่: คำนวณสรุปสถิติเวรรายสัปดาห์ในหน้าแอดมิน ---
         function calculateWeeklyReportDashboard() {
             const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
             let totalRegisteredTeammates = dutyRegistrations.length; 
             let totalDoneCount = doneChecklistData.filter(c => c.is_done === true).length;
 
-            // อัปเดตตัวเลขแสดงผลรายวันแยกวัน
             days.forEach(day => {
                 const count = doneChecklistData.filter(c => c.day_name_en.toLowerCase() === day && c.is_done === true).length;
                 const shortDay = day.substring(0, 3);
@@ -1430,7 +1477,6 @@
                 if(el) el.innerText = count + " คน";
             });
 
-            // คำนวณภาพรวมสัปดาห์เป็นเปอร์เซ็นต์
             const percentElement = document.getElementById('summary-weekly-percent');
             if (totalRegisteredTeammates > 0) {
                 const weeklyPercent = ((totalDoneCount / totalRegisteredTeammates) * 100).toFixed(0);
