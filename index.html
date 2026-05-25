@@ -951,29 +951,28 @@
             let insertRows = [];
             const currentTimeIso = new Date().toISOString(); 
 
-            // มองหาโซนนี้ในฟังก์ชัน submitDutyReport() แล้วปรับตรง insertRows ครับ
-teammates.forEach((tm, idx) => {
-    const state = localChecklistState[tm.student_id];
-    let statusText = "ทำเวร";
+            teammates.forEach((tm, idx) => {
+                const state = localChecklistState[tm.student_id];
+                let statusText = "ทำเวร";
 
-    if (state === true) {
-        statusText = "ทำเวร";
-    } else if (state === false) {
-        statusText = "ไม่ทำเวร";
-    } else if (state === 'leave') {
-        statusText = "ลา";
-    }
-    
-    textOutputArray.push(`${idx + 1}.${tm.student_name} ${statusText}`);
+                if (state === true) {
+                    statusText = "ทำเวร";
+                } else if (state === false) {
+                    statusText = "ไม่ทำเวร";
+                } else if (state === 'leave') {
+                    statusText = "ลา";
+                }
+                
+                textOutputArray.push(`${idx + 1}.${tm.student_name} ${statusText}`);
 
-    insertRows.push({
-        student_id: tm.student_id,
-        student_name: tm.student_name,
-        day_name_en: myReg.day_name_en,
-        is_done: statusText, // 🎉 ส่งตัวหนังสือ 'ทำเวร', 'ไม่ทำเวร', หรือ 'ลา' เข้าคอลัมน์ตรงๆ ได้เลย!
-        created_at: currentTimeIso 
-    });
-}
+                insertRows.push({
+                    student_id: tm.student_id,
+                    student_name: tm.student_name,
+                    day_name_en: myReg.day_name_en,
+                    is_done: statusText, // 🎉 ส่งตัวหนังสือ 'ทำเวร', 'ไม่ทำเวร', หรือ 'ลา' เข้าคอลัมน์ตรงๆ ได้เลย!
+                    created_at: currentTimeIso 
+                });
+            });
 
             const { error } = await _supabase.from('duty_checklist').insert(insertRows);
             
@@ -1502,10 +1501,10 @@ teammates.forEach((tm, idx) => {
         function calculateWeeklyReportDashboard() {
             const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
             let totalRegisteredTeammates = dutyRegistrations.length; 
-            let totalDoneCount = doneChecklistData.filter(c => c.is_done === true).length;
+            let totalDoneCount = doneChecklistData.filter(c => c.is_done === 'ทำเวร' || c.is_done === true).length;
 
             days.forEach(day => {
-                const count = doneChecklistData.filter(c => c.day_name_en.toLowerCase() === day && c.is_done === true).length;
+                const count = doneChecklistData.filter(c => c.day_name_en.toLowerCase() === day && (c.is_done === 'ทำเวร' || c.is_done === true)).length;
                 const shortDay = day.substring(0, 3);
                 const el = document.getElementById(`summary-${shortDay}-count`);
                 if(el) el.innerText = count + " คน";
@@ -1571,7 +1570,8 @@ teammates.forEach((tm, idx) => {
                 let workersHTML = '<p class="text-gray-400 italic mt-1">ยังไม่มีผู้ลงทะเบียน</p>';
                 if(workers.length > 0) {
                     workersHTML = workers.map(w => {
-                        const isDone = doneChecklistData.some(c => String(c.student_id) === String(w.student_id) && c.is_done === true);
+                        const checkLog = doneChecklistData.find(c => String(c.student_id) === String(w.student_id));
+                        const isDone = checkLog && (checkLog.is_done === 'ทำเวร' || checkLog.is_done === true);
                         return `
                             <div class="flex justify-between items-center bg-white p-1.5 px-2 rounded-lg border mt-1 font-medium text-slate-700 text-xs">
                                 <span class="flex items-center gap-1.5">
