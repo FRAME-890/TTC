@@ -807,11 +807,23 @@
             const gridSection = document.getElementById('duty-grid-section');
 
             if (myReg) {
-                checklistBox.classList.remove('hidden');
-                gridSection.classList.remove('hidden'); 
+                // --- ส่วนที่เพิ่ม: ตรวจสอบวันปัจจุบัน ---
+                const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                const todayIndex = new Date().getDay(); // ได้เลข 0-6 (0 = วันอาทิตย์, 1 = วันจันทร์...)
+                const currentDayNameEn = daysOfWeek[todayIndex]; // แปลงเป็นชื่อวันภาษาอังกฤษตัวเล็ก
+
+                // ตรวจสอบว่าวันของเวรเรา ตรงกับวันปัจจุบันของสัปดาห์หรือไม่
+                if (myReg.day_name_en.toLowerCase() === currentDayNameEn) {
+                    // ถ้าตรงกัน ให้แสดงกล่องเช็คชื่อตามปกติ
+                    checklistBox.classList.remove('hidden');
+                    document.getElementById('current-day-badge').innerText = `วัน${myReg.day_name_th || myReg.day_name_en}`;
+                    renderDutyChecklist(myReg.day_name_en, myReg.day_name_th);
+                } else {
+                    // ถ้ายังไม่ถึงวัน หรือเลยวันไปแล้ว ให้ซ่อนกล่องเช็คชื่อไว้
+                    checklistBox.classList.add('hidden');
+                }
                 
-                document.getElementById('current-day-badge').innerText = `วัน${myReg.day_name_th || myReg.day_name_en}`;
-                renderDutyChecklist(myReg.day_name_en, myReg.day_name_th);
+                gridSection.classList.remove('hidden'); 
             } else {
                 checklistBox.classList.add('hidden');
                 gridSection.classList.remove('hidden');
@@ -969,7 +981,7 @@
                     student_id: tm.student_id,
                     student_name: tm.student_name,
                     day_name_en: myReg.day_name_en,
-                    is_done: statusText, // 🎉 ส่งตัวหนังสือ 'ทำเวร', 'ไม่ทำเวร', หรือ 'ลา' เข้าคอลัมน์ตรงๆ ได้เลย!
+                    is_done: statusText, 
                     created_at: currentTimeIso 
                 });
             });
@@ -1244,7 +1256,7 @@
             } else {
                 resolvedCashStudentName = "";
                 previewBox.innerText = "❌ ไม่พบข้อมูลรายชื่อรหัสนี้";
-                previewBox.className = "text-[11px] text-red-600 px-2 font-medium bg-red-50 py-1.5 rounded-lg border border-dashed border-red-200 min-h-[28px] flex items-center";
+                previewBox.className = "text-[11px] text-red-600 px-2 font-medium bg-red-50 py-1.5 rounded-lg border border-dashed border-slate-200 min-h-[28px] flex items-center";
             }
         }
 
