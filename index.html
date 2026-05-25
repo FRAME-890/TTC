@@ -318,7 +318,7 @@
                                 <thead>
                                     <tr class="text-gray-400 border-b">
                                         <th class="pb-2 font-medium">ที่นั่ง</th>
-                                        <th class="pb-2 font-medium">รหัสนักเรียน</th>
+                                        <th class="pb-2 font-medium text-right">รหัสนักเรียน</th>
                                         <th class="pb-2 font-medium text-right">การจัดการ</th>
                                     </tr>
                                 </thead>
@@ -476,7 +476,7 @@
         
         let dutiesConfig = [];
         let dutyRegistrations = [];
-        let localChecklistState = {}; // เก็บสถานะติ๊กชั่วคราวบนหน้าเว็บ { student_id: true/false }
+        let localChecklistState = {}; // เก็บสถานะชั่วคราว { student_id: true / false / 'leave' }
         let doneChecklistData = []; 
         
         let homeworkList = [];
@@ -882,10 +882,16 @@
                     localChecklistState[tm.student_id] = true; 
                 }
 
-                const isChecked = localChecklistState[tm.student_id];
+                const state = localChecklistState[tm.student_id];
                 
                 const item = document.createElement('div');
                 item.className = "flex items-center justify-between p-3 bg-slate-50 border rounded-xl hover:bg-white transition shadow-sm";
+                
+                let labelText = "ทำแล้ว";
+                let labelClass = "text-green-600";
+                if(state === false) { labelText = "ไม่ทำเวร"; labelClass = "text-red-500"; }
+                else if(state === 'leave') { labelText = "ลาเวร"; labelClass = "text-amber-500"; }
+
                 item.innerHTML = `
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 font-bold flex items-center justify-center text-xs">
@@ -896,17 +902,24 @@
                             <p class="text-[10px] text-gray-400">ID: ${tm.student_id}</p>
                         </div>
                     </div>
-                    <label class="relative inline-flex items-center cursor-pointer select-none">
-                        <input type="checkbox" class="sr-only peer" ${isChecked ? 'checked' : ''} onchange="localChecklistState['${tm.student_id}'] = this.checked; updateLocalCheckLabel('${tm.student_id}', this.checked)">
-                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                        <span id="chk-lbl-${tm.student_id}" class="ml-2 text-xs font-bold ${isChecked ? 'text-green-600' : 'text-red-500'}">${isChecked ? 'ทำแล้ว' : 'ไม่ทำเวร'}</span>
-                    </label>
+                    <div class="flex items-center gap-3">
+                        <button onclick="setDutyLeave('${tm.student_id}')" class="px-2.5 py-1 bg-amber-400 hover:bg-amber-500 active:scale-95 text-white font-bold text-[10px] rounded-lg shadow-sm transition">
+                            <i class="fa-solid fa-envelope-open-text"></i> ลา
+                        </button>
+
+                        <label class="relative inline-flex items-center cursor-pointer select-none">
+                            <input type="checkbox" id="chk-box-${tm.student_id}" class="sr-only peer" ${state === true ? 'checked' : ''} onchange="toggleDutyCheckState('${tm.student_id}', this.checked)">
+                            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                            <span id="chk-lbl-${tm.student_id}" class="ml-2 text-xs font-bold ${labelClass}">${labelText}</span>
+                        </label>
+                    </div>
                 `;
                 container.appendChild(item);
             });
         }
 
-        function updateLocalCheckLabel(uid, isChecked) {
+        function toggleDutyCheckState(uid, isChecked) {
+            localChecklistState[uid] = isChecked;
             const lbl = document.getElementById(`chk-lbl-${uid}`);
             if(!lbl) return;
             if(isChecked) {
@@ -916,7 +929,18 @@
             }
         }
 
-        // ปุ่มกดเสร็จสิ้น -> ทำการบันทึกข้อมูลซ้ำลง database สตรีมไปเรื่อยๆ + สรุปผลคัดลอกรายชื่อขึ้นป๊อปอัป [แก้ไขคอลัมน์เวลาสำหรับ Trigger เรียบร้อย]
+        function setDutyLeave(uid) {
+            localChecklistState[uid] = 'leave';
+            const chk = document.getElementById(`chk-box-${uid}`);
+            if(chk) chk.checked = false; 
+            
+            const lbl = document.getElementById(`chk-lbl-${uid}`);
+            if(lbl) {
+                lbl.innerText = "ลาเวร"; 
+                lbl.className = "ml-2 text-xs font-bold text-amber-500";
+            }
+        }
+
         async function submitDutyReport() {
             const myReg = dutyRegistrations.find(r => String(r.student_id) === String(userData.student_id));
             if(!myReg) return;
@@ -928,8 +952,20 @@
             const currentTimeIso = new Date().toISOString(); 
 
             teammates.forEach((tm, idx) => {
-                const status = localChecklistState[tm.student_id] !== false; 
-                const statusText = status ? "ทำเวร" : "ไม่ทำเวร";
+                const state = localChecklistState[tm.student_id];
+                let statusText = "ทำเวร";
+                let isDoneValue = false;
+
+                if (state === true) {
+                    statusText = "ทำเวร";
+                    isDoneValue = true;
+                } else if (state === false) {
+                    statusText = "ไม่ทำเวร";
+                    isDoneValue = false;
+                } else if (state === 'leave') {
+                    statusText = "ลา";
+                    isDoneValue = false; // บันทึกเป็น Boolean สำหรับเงื่อนไขสัปดาห์ หรือเฟรมสามารถเก็บเป็น String 'leave' ได้หากเซ็ตคอลัมน์รองรับ
+                }
                 
                 textOutputArray.push(`${idx + 1}.${tm.student_name} ${statusText}`);
 
@@ -937,7 +973,7 @@
                     student_id: tm.student_id,
                     student_name: tm.student_name,
                     day_name_en: myReg.day_name_en,
-                    is_done: status,
+                    is_done: state === 'leave' ? false : isDoneValue, // ป้องกันโครงสร้าง Database พัง (หรือเปลี่ยนเป็นส่งข้อความตามแบบฉบับที่เฟรมต้องการ)
                     created_at: currentTimeIso 
                 });
             });
