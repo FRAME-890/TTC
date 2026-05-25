@@ -951,32 +951,29 @@
             let insertRows = [];
             const currentTimeIso = new Date().toISOString(); 
 
-            teammates.forEach((tm, idx) => {
-                const state = localChecklistState[tm.student_id];
-                let statusText = "ทำเวร";
-                let isDoneValue = false;
+            // มองหาโซนนี้ในฟังก์ชัน submitDutyReport() แล้วปรับตรง insertRows ครับ
+teammates.forEach((tm, idx) => {
+    const state = localChecklistState[tm.student_id];
+    let statusText = "ทำเวร";
 
-                if (state === true) {
-                    statusText = "ทำเวร";
-                    isDoneValue = true;
-                } else if (state === false) {
-                    statusText = "ไม่ทำเวร";
-                    isDoneValue = false;
-                } else if (state === 'leave') {
-                    statusText = "ลา";
-                    isDoneValue = false; // บันทึกเป็น Boolean สำหรับเงื่อนไขสัปดาห์ หรือเฟรมสามารถเก็บเป็น String 'leave' ได้หากเซ็ตคอลัมน์รองรับ
-                }
-                
-                textOutputArray.push(`${idx + 1}.${tm.student_name} ${statusText}`);
+    if (state === true) {
+        statusText = "ทำเวร";
+    } else if (state === false) {
+        statusText = "ไม่ทำเวร";
+    } else if (state === 'leave') {
+        statusText = "ลา";
+    }
+    
+    textOutputArray.push(`${idx + 1}.${tm.student_name} ${statusText}`);
 
-                insertRows.push({
-                    student_id: tm.student_id,
-                    student_name: tm.student_name,
-                    day_name_en: myReg.day_name_en,
-                    is_done: state === 'leave' ? false : isDoneValue, // ป้องกันโครงสร้าง Database พัง (หรือเปลี่ยนเป็นส่งข้อความตามแบบฉบับที่เฟรมต้องการ)
-                    created_at: currentTimeIso 
-                });
-            });
+    insertRows.push({
+        student_id: tm.student_id,
+        student_name: tm.student_name,
+        day_name_en: myReg.day_name_en,
+        is_done: statusText, // 🎉 ส่งตัวหนังสือ 'ทำเวร', 'ไม่ทำเวร', หรือ 'ลา' เข้าคอลัมน์ตรงๆ ได้เลย!
+        created_at: currentTimeIso 
+    });
+}
 
             const { error } = await _supabase.from('duty_checklist').insert(insertRows);
             
