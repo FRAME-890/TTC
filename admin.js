@@ -247,3 +247,23 @@ async function openAdmin() {
                 showAlert("ข้อผิดพลาด", "ล้มเหลวในการบันทึกข้อมูลลงฐานข้อมูล", "error");
             }
         }
+let tempSide = 'left';
+        function updateSideUI() {
+            document.getElementById('side-left').className = tempSide === 'left' ? 'flex-1 py-3 rounded-xl font-bold text-sm bg-slate-800 text-white' : 'flex-1 py-3 rounded-xl font-bold text-sm text-slate-500';
+            document.getElementById('side-right').className = tempSide === 'right' ? 'flex-1 py-3 rounded-xl font-bold text-sm bg-slate-800 text-white' : 'flex-1 py-3 rounded-xl font-bold text-sm text-slate-500';
+        }
+
+        function confirmAddObj() {
+            const pos = document.getElementById('obj-pos').value;
+            if(!roomConfig.wall_objects) roomConfig.wall_objects = [];
+            roomConfig.wall_objects.push({ type: 'window', side: tempSide, top: pos });
+            document.getElementById('obj-modal').classList.add('hidden');
+            renderAdminMap();
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('success-modal').classList.add('hidden');
+            selectedSeat = null;
+            document.getElementById('display-seat').innerText = '--';
+            loadSeatData();
+        }
