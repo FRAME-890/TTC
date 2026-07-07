@@ -1,6 +1,6 @@
 async function loadSeatData() {
             try {
-                const { data: config } = await _supabase.from('room').select('*').eq('id', 1).maybeSingle();
+                const { data: config } = await supabase.from('room').select('*').eq('id', 1).maybeSingle();
                 if(config) {
                     roomConfig = {
                         id: 1, rows: config.rows || 8, cols: config.cols || 6,
@@ -8,7 +8,7 @@ async function loadSeatData() {
                         custom_labels: config.custom_labels || {}
                     };
                 }
-                const { data: bookings } = await _supabase.from('bookings').select('*');
+                const { data: bookings } = await supabase.from('bookings').select('*');
                 fullBookingsData = bookings || [];
                 bookedSeats = fullBookingsData.map(b => b.seat_number);
                 render('seat-map', 'wall-elements-container', false);
@@ -69,10 +69,10 @@ async function loadSeatData() {
         async function confirmBooking() {
             if(!selectedSeat) return showAlert("แจ้งเตือน", "กรุณาเลือกตำแหน่งที่นั่งที่ต้องการจองบนผังห้องเรียน", "warning");
             
-            const { data: existing } = await _supabase.from('bookings').select('*').eq('student_id', userData.student_id).maybeSingle();
+            const { data: existing } = await supabase.from('bookings').select('*').eq('student_id', userData.student_id).maybeSingle();
             if (existing) return showAlert("ปฏิเสธการดำเนินการ", `คุณได้สิทธิ์จองที่นั่งเลขที่ ${existing.seat_number} แล้ว ไม่สามารถจองซ้ำได้`, "error");
 
-            const { error } = await _supabase.from('bookings').insert([{
+            const { error } = await supabase.from('bookings').insert([{
                 student_id: userData.student_id,
                 student_name: userData.name,
                 seat_number: selectedSeat
