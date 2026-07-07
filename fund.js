@@ -1,6 +1,6 @@
 async function loadFundData() {
             try {
-                const { data: config } = await _supabase.from('classroom_funds').select('*').order('id', { ascending: false }).limit(1).maybeSingle();
+                const { data: config } = await supabase.from('classroom_funds').select('*').order('id', { ascending: false }).limit(1).maybeSingle();
                 currentFundConfig = config;
 
                 if (!currentFundConfig) {
@@ -11,10 +11,10 @@ async function loadFundData() {
 
                 document.getElementById('fund-target-title').innerText = `${currentFundConfig.title} (${currentFundConfig.amount_per_person} บาท)`;
 
-                const { data: payments } = await _supabase.from('fund_payments').select('*').eq('fund_id', currentFundConfig.id).order('paid_at', { ascending: false });
+                const { data: payments } = await supabase.from('fund_payments').select('*').eq('fund_id', currentFundConfig.id).order('paid_at', { ascending: false });
                 paymentList = payments || [];
 
-                const { data: withdraws } = await _supabase.from('fund_withdrawals').select('*').eq('fund_id', currentFundConfig.id).order('withdrawn_at', { ascending: false });
+                const { data: withdraws } = await supabase.from('fund_withdrawals').select('*').eq('fund_id', currentFundConfig.id).order('withdrawn_at', { ascending: false });
                 withdrawalList = withdraws || [];
 
                 let totalIncome = 0;
@@ -177,13 +177,13 @@ async function loadFundData() {
                         const fileExt = selectedSlipFile.name.split('.').pop();
                         const uniqueSlipName = `slip_${userData.student_id}_${Date.now()}.${fileExt}`;
 
-                        const { data: uploadData, error: uploadErr } = await _supabase.storage
+                        const { data: uploadData, error: uploadErr } = await supabase.storage
                             .from('fund-files') 
                             .upload(uniqueSlipName, selectedSlipFile);
 
                         if(uploadErr) throw uploadErr;
 
-                        const { data: urlData } = _supabase.storage.from('fund-files').getPublicUrl(uniqueSlipName);
+                        const { data: urlData } = supabase.storage.from('fund-files').getPublicUrl(uniqueSlipName);
                         slipPublicUrl = urlData.publicUrl;
 
                     } catch (uploadError) {
@@ -194,7 +194,7 @@ async function loadFundData() {
                         return;
                     }
 
-                    const { error } = await _supabase.from('fund_payments').insert([{
+                    const { error } = await supabase.from('fund_payments').insert([{
                         fund_id: currentFundConfig.id,
                         student_id: userData.student_id,
                         student_name: userData.name,
@@ -224,7 +224,7 @@ async function loadFundData() {
                 previewBox.className = "text-[11px] text-slate-500 px-2 font-medium bg-slate-50 py-1.5 rounded-lg border border-dashed border-slate-200 min-h-[28px] flex items-center";
                 resolvedCashStudentName = ""; return;
             }
-            const { data } = await _supabase.from('settings').select('name').eq('student_id', trimmedId).maybeSingle();
+            const { data } = await supabase.from('settings').select('name').eq('student_id', trimmedId).maybeSingle();
             if(data) {
                 resolvedCashStudentName = data.name;
                 previewBox.innerText = `🟢 พบชื่อนักเรียน: ${data.name}`;
@@ -245,7 +245,7 @@ async function loadFundData() {
                 return showAlert("แจ้งเตือน", "กรุณาระบุรหัสประจำตัวของนักเรียนที่ถูกต้องและตรวจสอบความถูกต้องของชื่อผู้โอนก่อน", "warning");
             }
 
-            const { error } = await _supabase.from('fund_payments').insert([{
+            const { error } = await supabase.from('fund_payments').insert([{
                 fund_id: currentFundConfig.id,
                 student_id: targetId,
                 student_name: resolvedCashStudentName,
@@ -274,7 +274,7 @@ async function loadFundData() {
             }
 
             showAlert("ยืนยันการถอนเงิน", `คุณต้องการบันทึกรายการรายจ่ายจำนวน ${wAmount} บาท สำหรับ "${wTitle}" ใช่หรือไม่?`, "confirm", async () => {
-                const { error } = await _supabase.from('fund_withdrawals').insert([{
+                const { error } = await supabase.from('fund_withdrawals').insert([{
                     fund_id: currentFundConfig.id,
                     title: wTitle,
                     amount: wAmount
@@ -297,7 +297,7 @@ async function loadFundData() {
             const pp = document.getElementById('adm-fund-pp').value.trim();
             if(!title || !money || !pp) return showAlert("แจ้งเตือน", "กรุณากรอกข้อมูลตัวเลือกกองทุนให้ครบทุกช่องก่อนอัปเดต", "warning");
 
-            const { error } = await _supabase.from('classroom_funds').insert([{ title: title, amount_per_person: parseFloat(money), promptpay_id: pp }]);
+            const { error } = await supabase.from('classroom_funds').insert([{ title: title, amount_per_person: parseFloat(money), promptpay_id: pp }]);
             if(!error) { showAlert("สำเร็จ", "เริ่มต้นแคมเปญระดมทุนและอัปเดตข้อมูลใหม่ของห้องเรียนสำเร็จ", "success"); loadFundData(); }
             else { showAlert("ข้อผิดพลาด", "ล้มเหลวในการอัปเดตเงื่อนไขการตั้งค่าตารางข้อมูล", "error"); }
         }
