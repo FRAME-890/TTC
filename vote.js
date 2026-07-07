@@ -1,20 +1,20 @@
 async function loadVoteData() {
             try {
-                const { data: polls } = await _supabase.from('polls').select('*').order('created_at', { ascending: false });
+                const { data: polls } = await supabase.from('polls').select('*').order('created_at', { ascending: false });
                 activePolls = polls || [];
 
-                const { data: votes } = await _supabase.from('poll_votes').select('*').eq('student_id', userData.student_id);
+                const { data: votes } = await supabase.from('poll_votes').select('*').eq('student_id', userData.student_id);
                 myVotes = votes || [];
 
                 for(let poll of activePolls) {
-                    const { data: allVotes } = await _supabase.from('poll_votes').select('option_index').eq('poll_id', poll.id);
+                    const { data: allVotes } = await supabase.from('poll_votes').select('option_index').eq('poll_id', poll.id);
                     poll.votesData = allVotes || [];
                 }
 
                 renderPollsList();
 
-                if (voteSubscription) _supabase.removeChannel(voteSubscription);
-                voteSubscription = _supabase.channel('public:poll_votes')
+                if (voteSubscription) supabase.removeChannel(voteSubscription);
+                voteSubscription = supabase.channel('public:poll_votes')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'poll_votes' }, () => {
                     loadVoteData();
                 })
@@ -90,7 +90,7 @@ async function loadVoteData() {
             const optionsArray = rawOptions.split(',').map(o => o.trim()).filter(o => o.length > 0);
             if(optionsArray.length < 2) return showAlert("แจ้งเตือน", "กรุณาใส่ตัวเลือกอย่างน้อย 2 ตัวเลือกขึ้นไป (แยกกันด้วยคอมม่า ,)", "warning");
 
-            const { error } = await _supabase.from('polls').insert([{
+            const { error } = await supabase.from('polls').insert([{
                 question: question,
                 options: optionsArray,
                 created_by: userData.student_id
@@ -107,7 +107,7 @@ async function loadVoteData() {
         }
 
         async function castVote(pollId, optionIndex) {
-            const { error } = await _supabase.from('poll_votes').insert([{
+            const { error } = await supabase.from('poll_votes').insert([{
                 poll_id: pollId,
                 student_id: userData.student_id,
                 option_index: optionIndex
@@ -118,7 +118,7 @@ async function loadVoteData() {
 
         function deletePoll(pollId) {
             showAlert("ยืนยันการลบ", "คุณต้องการปิดและลบหัวข้อโหวตนี้ออกจากระบบถาวรใช่หรือไม่?", "confirm", async () => {
-                const { error } = await _supabase.from('polls').delete().eq('id', pollId);
+                const { error } = await supabase.from('polls').delete().eq('id', pollId);
                 if(!error) {
                     showAlert("สำเร็จ", "ลบหัวข้อโหวตเรียบร้อย", "success");
                     loadVoteData();
