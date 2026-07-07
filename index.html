@@ -9,44 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght=300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { font-family: 'Kanit', sans-serif; background-color: #f0f7f2; }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.5); }
-        
-        .seat { 
-            transition: all 0.2s ease; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-weight: bold; 
-            border-radius: 10px; 
-            font-size: 10px; 
-            text-align: center;
-            aspect-ratio: 1/1;
-            width: 100%;
-        }
-        .seat-vacant { background: white; border: 1px solid #e2e8f0; color: #94a3b8; }
-        .seat-occupied { background: #cbd5e1 !important; color: #94a3b8 !important; cursor: not-allowed; border: none; }
-        .seat-selected { background: #00b272 !important; color: white !important; transform: scale(1.05); box-shadow: 0 8px 20px rgba(0,178,114,0.3); z-index: 10; }
-        .seat-blocked { opacity: 0; pointer-events: none; } 
-        .seat-admin-blocked { background: #fee2e2 !important; border: 2px dashed #ef4444 !important; color: #ef4444 !important; }
-        
-        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-        .wall-v { position: absolute; width: 8px; border-radius: 99px; z-index: 60; }
-        .win-v { background: #60a5fa; box-shadow: 0 0 10px rgba(96, 165, 250, 0.6); }
-        .door-v { background: #fb923c; box-shadow: 0 0 10px rgba(251, 146, 60, 0.6); }
-
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        .animate-pop { animation: fadeIn 0.2s ease-out; }
-
-        .menu-card { transition: all 0.3s ease; }
-        .menu-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="min-h-screen flex flex-col items-center p-2 overflow-x-hidden">
 
