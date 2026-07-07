@@ -2,7 +2,7 @@ async function openAdmin() {
             if(userData.role !== 'admin') return;
             document.getElementById('admin-panel').classList.remove('hidden');
             
-            const { data: config } = await _supabase.from('room').select('*').eq('id', 1).maybeSingle();
+            const { data: config } = await supabase.from('room').select('*').eq('id', 1).maybeSingle();
             if(config) {
                 roomConfig = {
                     id: 1, rows: config.rows || 8, cols: config.cols || 6,
@@ -13,7 +13,7 @@ async function openAdmin() {
             document.getElementById('inp-rows').value = roomConfig.rows;
             document.getElementById('inp-cols').value = roomConfig.cols;
             
-            const { data: fundConfig } = await _supabase.from('classroom_funds').select('*').order('id', { ascending: false }).limit(1).maybeSingle();
+            const { data: fundConfig } = await supabase.from('classroom_funds').select('*').order('id', { ascending: false }).limit(1).maybeSingle();
             currentFundConfig = fundConfig;
             if (currentFundConfig) {
                 document.getElementById('adm-fund-title').value = currentFundConfig.title;
@@ -27,23 +27,23 @@ async function openAdmin() {
 
         async function loadAdminDashboardData() {
             try {
-                const { data: bookings } = await _supabase.from('bookings').select('*').order('seat_number');
+                const { data: bookings } = await supabase.from('bookings').select('*').order('seat_number');
                 fullBookingsData = bookings || [];
                 bookedSeats = fullBookingsData.map(b => b.seat_number);
                 renderAdminBookingsTable();
 
-                const { data: duties } = await _supabase.from('duties').select('*').order('id');
+                const { data: duties } = await supabase.from('duties').select('*').order('id');
                 dutiesConfig = duties || [];
-                const { data: regs } = await _supabase.from('duty_registrations').select('*');
+                const { data: regs } = await supabase.from('duty_registrations').select('*');
                 dutyRegistrations = regs || [];
                 
-                const { data: checks } = await _supabase.from('duty_checklist').select('*');
+                const { data: checks } = await supabase.from('duty_checklist').select('*');
                 doneChecklistData = checks || [];
 
                 renderAdminDutyList();
                 calculateWeeklyReportDashboard(); 
 
-                const { data: hws } = await _supabase.from('homework').select('*').order('deadline', { ascending: true });
+                const { data: hws } = await supabase.from('homework').select('*').order('deadline', { ascending: true });
                 homeworkList = hws || [];
                 renderAdminHomeworkList();
 
@@ -99,7 +99,7 @@ async function openAdmin() {
 
         async function removeBookingAdmin(studentId, seatNum) {
             showAlert("ยืนยันการลบ", `คุณต้องการยกเลิกและคืนสิทธิ์ที่นั่งหมายเลข ${seatNum} ใช่หรือไม่?`, "confirm", async () => {
-                const { error } = await _supabase.from('bookings').delete().eq('student_id', studentId);
+                const { error } = await supabase.from('bookings').delete().eq('student_id', studentId);
                 if(!error) {
                     showAlert("สำเร็จ", "ยกเลิกการจองเรียบร้อยแล้ว", "success");
                     await loadAdminDashboardData();
@@ -148,8 +148,8 @@ async function openAdmin() {
 
         async function removeDutyAdmin(studentId) {
             showAlert("ยืนยัน", "ต้องการเอารายชื่อนักเรียนคนนี้ออกจากเวรใช่หรือไม่?", "confirm", async () => {
-                await _supabase.from('duty_checklist').delete().eq('student_id', studentId);
-                const { error } = await _supabase.from('duty_registrations').delete().eq('student_id', studentId);
+                await supabase.from('duty_checklist').delete().eq('student_id', studentId);
+                const { error } = await supabase.from('duty_registrations').delete().eq('student_id', studentId);
                 if(!error) {
                     showAlert("สำเร็จ", "ลบรายชื่อออกจากตารางเวรเรียบร้อย", "success");
                     await loadAdminDashboardData();
@@ -159,8 +159,8 @@ async function openAdmin() {
 
         function resetAllDutiesAdmin() {
             showAlert("ล้างข้อมูลเวร", "คุณต้องการล้างข้อมูลสมาชิกเวรประจำวันทั้งหมดออกใช่หรือไม่? (ลบถาวร)", "confirm", async () => {
-                await _supabase.from('duty_checklist').delete().neq('student_id', '0');
-                const { error } = await _supabase.from('duty_registrations').delete().neq('student_id', '0');
+                await supabase.from('duty_checklist').delete().neq('student_id', '0');
+                const { error } = await supabase.from('duty_registrations').delete().neq('student_id', '0');
                 if(!error) {
                     showAlert("สำเร็จ", "ล้างข้อมูลตารางเวรทั้งหมดเสร็จสิ้น", "success");
                     await loadAdminDashboardData();
@@ -193,8 +193,8 @@ async function openAdmin() {
 
         async function deleteHomeworkAdmin(id) {
             showAlert("ยืนยันการลบ", "คุณต้องการลบรายการแจ้งการบ้านนี้ออกจากระบบใช่หรือไม่?", "confirm", async () => {
-                await _supabase.from('homework_status').delete().eq('homework_id', id);
-                const { error } = await _supabase.from('homework').delete().eq('id', id);
+                await supabase.from('homework_status').delete().eq('homework_id', id);
+                const { error } = await supabase.from('homework').delete().eq('id', id);
                 if(!error) {
                     showAlert("สำเร็จ", "ลบข้อมูลเรียบร้อยแล้ว", "success");
                     await loadAdminDashboardData();
@@ -228,7 +228,7 @@ async function openAdmin() {
             saveBtn.disabled = true;
             saveBtn.innerText = "กำลังบันทึกข้อมูล...";
 
-            const { error } = await _supabase.from('room').update({
+            const { error } = await supabase.from('room').update({
                 rows: roomConfig.rows,
                 cols: roomConfig.cols,
                 blocked_seats: roomConfig.blocked_seats,
