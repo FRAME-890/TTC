@@ -1,7 +1,7 @@
 async function loadDutyData() {
-            const { data: duties } = await _supabase.from('duties').select('*').order('id');
+            const { data: duties } = await supabase.from('duties').select('*').order('id');
             dutiesConfig = duties || [];
-            const { data: regs } = await _supabase.from('duty_registrations').select('*');
+            const { data: regs } = await supabase.from('duty_registrations').select('*');
             dutyRegistrations = regs || [];
 
             renderDutyInterface();
@@ -208,7 +208,7 @@ async function loadDutyData() {
                 });
             });
 
-            const { error } = await _supabase.from('duty_checklist').insert(insertRows);
+            const { error } = await supabase.from('duty_checklist').insert(insertRows);
             
             if(error) {
                 console.error("Database append log error: ", error);
@@ -231,13 +231,13 @@ async function loadDutyData() {
         }
 
         async function selectDuty(dayNameEn) {
-            await _supabase.from('duty_registrations').insert([{ student_id: userData.student_id, student_name: userData.name, day_name_en: dayNameEn }]);
+            await supabase.from('duty_registrations').insert([{ student_id: userData.student_id, student_name: userData.name, day_name_en: dayNameEn }]);
             showAlert("สำเร็จ", "คุณลงทะเบียนเวรประจำวันเรียบร้อยแล้ว", "success");
             loadDutyData();
         }
 
         async function cancelDuty() {
-            await _supabase.from('duty_registrations').delete().eq('student_id', userData.student_id);
+            await supabase.from('duty_registrations').delete().eq('student_id', userData.student_id);
             showAlert("สำเร็จ", "ยกเลิกข้อมูลการลงทะเบียนเวรเรียบร้อยแล้ว", "success");
             localChecklistState = {}; 
             loadDutyData();
