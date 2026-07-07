@@ -22,7 +22,7 @@ function showNav() {
                 document.getElementById('landing-name').innerText = userData.name;
             }
             if (id !== 'vote-page' && voteSubscription) {
-                _supabase.removeChannel(voteSubscription);
+                supabase.removeChannel(voteSubscription);
                 voteSubscription = null;
             }
         }
