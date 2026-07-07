@@ -1,8 +1,8 @@
 async function loadHomeworkData() {
             try {
-                const { data: hws } = await _supabase.from('homework').select('*').order('deadline', { ascending: true });
+                const { data: hws } = await supabase.from('homework').select('*').order('deadline', { ascending: true });
                 homeworkList = hws || [];
-                const { data: doneList } = await _supabase.from('homework_status').select('homework_id').eq('student_id', userData.student_id);
+                const { data: doneList } = await supabase.from('homework_status').select('homework_id').eq('student_id', userData.student_id);
                 completedHomeworkIds = doneList ? doneList.map(item => item.homework_id) : [];
                 renderHomeworkList();
             } catch (err) { console.error(err); }
@@ -54,7 +54,7 @@ async function loadHomeworkData() {
             const deadline = document.getElementById('hw-deadline').value;
             if(!subject || !title || !deadline) return showAlert("แจ้งเตือน", "กรุณากรอกข้อมูลและรายละเอียดการบ้านให้ครบทุกช่องก่อนดำเนินการ", "warning");
 
-            await _supabase.from('homework').insert([{ subject_name: subject, title: title, deadline: deadline, created_by: userData.student_id }]);
+            await supabase.from('homework').insert([{ subject_name: subject, title: title, deadline: deadline, created_by: userData.student_id }]);
             document.getElementById('hw-subject').value = ''; document.getElementById('hw-title').value = ''; document.getElementById('hw-deadline').value = '';
             showAlert("สำเร็จ", "เพิ่มข้อมูลการบ้านใหม่เข้าสู่ระบบเรียบร้อยแล้ว", "success");
             loadHomeworkData();
