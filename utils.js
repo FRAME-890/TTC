@@ -45,5 +45,17 @@ function showAlert(title, message, type = 'success', onConfirm = null) {
                 card.classList.remove('scale-95');
                 card.classList.add('scale-100');
             }, 10);
-}
+        }
 
+        function closeCustomAlert() {
+            const modal = document.getElementById('custom-alert-modal');
+            const card = modal.querySelector('.glass');
+            
+            modal.classList.add('opacity-0');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
