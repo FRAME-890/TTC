@@ -76,7 +76,7 @@ function showAlert(title, message, type = 'success', onConfirm = null) {
         }
 
         function goToPage(id) {
-            ['login-page', 'landing-page', 'main-app', 'duty-page', 'homework-page', 'fund-page', 'vote-page', 'admin-panel'].forEach(p => {
+    ['login-page', 'landing-page', 'main-app', 'bus-page', 'duty-page', 'homework-page', 'fund-page', 'vote-page', 'admin-panel'].forEach(p => {
                 if(document.getElementById(p)) document.getElementById(p).classList.add('hidden');
             });
             document.getElementById(id).classList.remove('hidden');
