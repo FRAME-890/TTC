@@ -1,0 +1,244 @@
+async function loadDutyData() {
+            const { data: duties } = await _supabase.from('duties').select('*').order('id');
+            dutiesConfig = duties || [];
+            const { data: regs } = await _supabase.from('duty_registrations').select('*');
+            dutyRegistrations = regs || [];
+
+            renderDutyInterface();
+        }
+
+        function getDayColorStyle(dayNameEn) {
+            const lowerDay = dayNameEn.toLowerCase();
+            if (lowerDay.includes('mon')) return 'bg-yellow-100 text-yellow-700';
+            if (lowerDay.includes('tue')) return 'bg-pink-100 text-pink-700';
+            if (lowerDay.includes('wed')) return 'bg-green-100 text-green-700';
+            if (lowerDay.includes('thu')) return 'bg-orange-100 text-orange-700';
+            if (lowerDay.includes('fri')) return 'bg-blue-100 text-blue-700';
+            return 'bg-slate-100 text-slate-700';
+        }
+
+        function renderDutyInterface() {
+            const grid = document.getElementById('duty-grid'); 
+            if (!grid) return;
+            grid.innerHTML = '';
+            
+            const myReg = dutyRegistrations.find(r => String(r.student_id) === String(userData.student_id));
+            const mySelectedDay = myReg ? myReg.day_name_en.toLowerCase() : null;
+
+            const checklistBox = document.getElementById('duty-checklist-box');
+            const gridSection = document.getElementById('duty-grid-section');
+
+            if (myReg) {
+                // --- ส่วนที่เพิ่ม: ตรวจสอบวันปัจจุบัน ---
+                const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                const todayIndex = new Date().getDay(); // ได้เลข 0-6 (0 = วันอาทิตย์, 1 = วันจันทร์...)
+                const currentDayNameEn = daysOfWeek[todayIndex]; // แปลงเป็นชื่อวันภาษาอังกฤษตัวเล็ก
+
+                // ตรวจสอบว่าวันของเวรเรา ตรงกับวันปัจจุบันของสัปดาห์หรือไม่
+                if (myReg.day_name_en.toLowerCase() === currentDayNameEn) {
+                    // ถ้าตรงกัน ให้แสดงกล่องเช็คชื่อตามปกติ
+                    checklistBox.classList.remove('hidden');
+                    document.getElementById('current-day-badge').innerText = `วัน${myReg.day_name_th || myReg.day_name_en}`;
+                    renderDutyChecklist(myReg.day_name_en, myReg.day_name_th);
+                } else {
+                    // ถ้ายังไม่ถึงวัน หรือเลยวันไปแล้ว ให้ซ่อนกล่องเช็คชื่อไว้
+                    checklistBox.classList.add('hidden');
+                }
+                
+                gridSection.classList.remove('hidden'); 
+            } else {
+                checklistBox.classList.add('hidden');
+                gridSection.classList.remove('hidden');
+            }
+
+            dutiesConfig.forEach(day => {
+                const currentDayEn = day.day_name_en.toLowerCase();
+                const workers = dutyRegistrations.filter(r => r.day_name_en.toLowerCase() === currentDayEn);
+                const isMyDay = mySelectedDay === currentDayEn;
+                
+                const card = document.createElement('div');
+                card.className = `glass p-5 rounded-2xl border text-center flex flex-col justify-between min-h-[280px] transition-all duration-300 ${
+                    isMyDay ? 'ring-4 ring-green-500 bg-green-50/30 shadow-lg scale-102' : 'hover:shadow-md'
+                }`;
+                
+                const dayColorClass = getDayColorStyle(day.day_name_en);
+
+                let btnHTML = `<button onclick="selectDuty('${day.day_name_en}')" class="w-full py-2.5 bg-[#00b272] hover:bg-[#009661] text-white rounded-xl text-xs font-bold shadow-sm transition">เลือกเวรวันนี้</button>`;
+                if(isMyDay) {
+                    btnHTML = `<button onclick="cancelDuty()" class="w-full py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold shadow-sm transition"><i class="fa-solid fa-trash-can mr-1"></i> ยกเลิกเวร</button>`;
+                } else if(mySelectedDay || workers.length >= day.max_slots) {
+                    btnHTML = `<button disabled class="w-full py-2.5 bg-gray-100 text-gray-300 rounded-xl text-xs font-bold cursor-not-allowed">เต็ม / เลือกวันอื่นแล้ว</button>`;
+                }
+
+                let workersListHTML = '<p class="text-gray-300 italic py-2 text-[11px]">ยังไม่มีสมาชิก</p>';
+                if (workers.length > 0) {
+                    workersListHTML = workers.map(w => {
+                        const isItMe = String(w.student_id) === String(userData.student_id);
+                        return `
+                            <div class="flex items-center justify-between py-1.5 px-3 border rounded-xl text-xs mb-1.5 font-medium ${
+                                isItMe 
+                                ? 'bg-green-600 text-white font-bold border-green-600 shadow-sm' 
+                                : 'bg-white text-slate-700 border-slate-100'
+                            }">
+                                <span class="truncate"><i class="fa-solid fa-user text-[10px] mr-1 opacity-70"></i> ${w.student_name}</span>
+                                ${isItMe ? '<span class="text-[9px] bg-white/20 px-1.5 py-0.5 rounded-md">คุณ</span>' : ''}
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                card.innerHTML = `
+                    <div>
+                        <div class="px-4 py-1.5 rounded-full text-xs font-bold mx-auto w-fit shadow-sm ${dayColorClass}">
+                            วัน${day.day_name_th}
+                        </div>
+                        <div class="text-[10px] text-gray-400 mb-4 mt-2 font-bold tracking-wider">
+                            สมาชิกประจำวัน (${workers.length}/${day.max_slots})
+                        </div>
+                        <div class="custom-scrollbar max-h-40 overflow-y-auto pr-0.5">
+                            ${workersListHTML}
+                        </div>
+                    </div>
+                    <div class="mt-5">${btnHTML}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderDutyChecklist(targetDayEn, targetDayTh) {
+            const container = document.getElementById('my-day-checklist-items');
+            container.innerHTML = '';
+            
+            const teammates = dutyRegistrations.filter(r => r.day_name_en.toLowerCase() === targetDayEn.toLowerCase());
+
+            teammates.forEach(tm => {
+                if (localChecklistState[tm.student_id] === undefined) {
+                    localChecklistState[tm.student_id] = true; 
+                }
+
+                const state = localChecklistState[tm.student_id];
+                
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-3 bg-slate-50 border rounded-xl hover:bg-white transition shadow-sm";
+                
+                let labelText = "ทำแล้ว";
+                let labelClass = "text-green-600";
+                if(state === false) { labelText = "ไม่ทำเวร"; labelClass = "text-red-500"; }
+                else if(state === 'leave') { labelText = "ลาเวร"; labelClass = "text-amber-500"; }
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 font-bold flex items-center justify-center text-xs">
+                            ${tm.student_name.charAt(0)}
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-800">${tm.student_name}</p>
+                            <p class="text-[10px] text-gray-400">ID: ${tm.student_id}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="setDutyLeave('${tm.student_id}')" class="px-2.5 py-1 bg-amber-400 hover:bg-amber-500 active:scale-95 text-white font-bold text-[10px] rounded-lg shadow-sm transition">
+                            <i class="fa-solid fa-envelope-open-text"></i> ลา
+                        </button>
+
+                        <label class="relative inline-flex items-center cursor-pointer select-none">
+                            <input type="checkbox" id="chk-box-${tm.student_id}" class="sr-only peer" ${state === true ? 'checked' : ''} onchange="toggleDutyCheckState('${tm.student_id}', this.checked)">
+                            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                            <span id="chk-lbl-${tm.student_id}" class="ml-2 text-xs font-bold ${labelClass}">${labelText}</span>
+                        </label>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function toggleDutyCheckState(uid, isChecked) {
+            localChecklistState[uid] = isChecked;
+            const lbl = document.getElementById(`chk-lbl-${uid}`);
+            if(!lbl) return;
+            if(isChecked) {
+                lbl.innerText = "ทำแล้ว"; lbl.className = "ml-2 text-xs font-bold text-green-600";
+            } else {
+                lbl.innerText = "ไม่ทำเวร"; lbl.className = "ml-2 text-xs font-bold text-red-500";
+            }
+        }
+
+        function setDutyLeave(uid) {
+            localChecklistState[uid] = 'leave';
+            const chk = document.getElementById(`chk-box-${uid}`);
+            if(chk) chk.checked = false; 
+            
+            const lbl = document.getElementById(`chk-lbl-${uid}`);
+            if(lbl) {
+                lbl.innerText = "ลา"; 
+                lbl.className = "ml-2 text-xs font-bold text-amber-500";
+            }
+        }
+
+        async function submitDutyReport() {
+            const myReg = dutyRegistrations.find(r => String(r.student_id) === String(userData.student_id));
+            if(!myReg) return;
+
+            const teammates = dutyRegistrations.filter(r => r.day_name_en.toLowerCase() === myReg.day_name_en.toLowerCase());
+            
+            let textOutputArray = [];
+            let insertRows = [];
+            const currentTimeIso = new Date().toISOString(); 
+
+            teammates.forEach((tm, idx) => {
+                const state = localChecklistState[tm.student_id];
+                let statusText = "ทำเวร";
+
+                if (state === true) {
+                    statusText = "ทำเวร";
+                } else if (state === false) {
+                    statusText = "ไม่ทำเวร";
+                } else if (state === 'leave') {
+                    statusText = "ลา";
+                }
+                
+                textOutputArray.push(`${idx + 1}.${tm.student_name} ${statusText}`);
+
+                insertRows.push({
+                    student_id: tm.student_id,
+                    student_name: tm.student_name,
+                    day_name_en: myReg.day_name_en,
+                    is_done: statusText, 
+                    created_at: currentTimeIso 
+                });
+            });
+
+            const { error } = await _supabase.from('duty_checklist').insert(insertRows);
+            
+            if(error) {
+                console.error("Database append log error: ", error);
+                return showAlert("ข้อผิดพลาด", "ไม่สามารถบันทึกรายงานได้ เนื่องจากระบบสัปดาห์นี้ถูกบันทึกไปแล้ว หรือเกิดข้อผิดพลาดภายในระบบฐานข้อมูล", "error");
+            }
+
+            const reportString = textOutputArray.join('\n');
+            document.getElementById('report-text-output').value = reportString;
+            document.getElementById('copy-report-modal').classList.remove('hidden');
+        }
+
+        function executeCopyText() {
+            const copyText = document.getElementById('report-text-output');
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); 
+            navigator.clipboard.writeText(copyText.value);
+            
+            showAlert("คัดลอกสำเร็จ", "บันทึกและคัดลอกรายงานรายชื่อไปยังคลิปบอร์ดของคุณเรียบร้อยแล้ว!", "success");
+            document.getElementById('copy-report-modal').classList.add('hidden');
+        }
+
+        async function selectDuty(dayNameEn) {
+            await _supabase.from('duty_registrations').insert([{ student_id: userData.student_id, student_name: userData.name, day_name_en: dayNameEn }]);
+            showAlert("สำเร็จ", "คุณลงทะเบียนเวรประจำวันเรียบร้อยแล้ว", "success");
+            loadDutyData();
+        }
+
+        async function cancelDuty() {
+            await _supabase.from('duty_registrations').delete().eq('student_id', userData.student_id);
+            showAlert("สำเร็จ", "ยกเลิกข้อมูลการลงทะเบียนเวรเรียบร้อยแล้ว", "success");
+            localChecklistState = {}; 
+            loadDutyData();
+        }
