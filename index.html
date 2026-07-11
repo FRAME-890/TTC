@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght=300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="min-h-screen flex flex-col items-center p-2 overflow-x-hidden">
@@ -46,7 +48,11 @@
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div onclick="goToPage('main-app'); loadSeatData();" class="menu-card glass p-6 rounded-3xl cursor-pointer text-center">
                 <div class="w-12 h-12 mx-auto bg-green-100 text-green-600 rounded-2xl flex items-center justify-center text-2xl mb-4"><i class="fa-solid fa-chair"></i></div>
-                <h3 class="font-bold text-sm">จองที่นั่ง</h3>
+                <h3 class="font-bold text-sm">จองที่นั่งห้อง</h3>
+            </div>
+            <div onclick="goToPage('bus-page'); loadBusData();" class="menu-card glass p-6 rounded-3xl cursor-pointer text-center">
+                <div class="w-12 h-12 mx-auto bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center text-2xl mb-4"><i class="fa-solid fa-bus"></i></div>
+                <h3 class="font-bold text-sm">จองที่นั่งรถบัส</h3>
             </div>
             <div onclick="goToPage('duty-page'); loadDutyData();" class="menu-card glass p-6 rounded-3xl cursor-pointer text-center">
                 <div class="w-12 h-12 mx-auto bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-2xl mb-4"><i class="fa-solid fa-calendar-check"></i></div>
@@ -89,7 +95,37 @@
             </div>
         </div>
     </div>
+<div id="bus-page" class="hidden w-full max-w-6xl animate-pop px-2">
+    <div class="flex justify-between items-center mb-6 max-w-4xl mx-auto">
+        <button onclick="goToPage('landing-page')" class="flex items-center gap-2 text-[#00b272] font-bold text-sm bg-white px-4 py-2 rounded-xl shadow-sm border"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
+        <h2 class="text-lg font-bold text-slate-700">จองที่นั่งรถบัสทัศนศึกษา</h2>
+        <button id="bus-my-seat-btn" onclick="showMyBusTicket()" class="hidden flex items-center gap-2 text-white bg-sky-500 font-bold text-xs px-4 py-2 rounded-xl shadow-md"><i class="fa-solid fa-ticket"></i> ที่นั่งของฉัน</button>
+    </div>
 
+    <div id="bus-status-banner" class="hidden max-w-4xl mx-auto"></div>
+
+    <div class="flex gap-3 max-w-xs mx-auto mb-6">
+        <button id="bus-floor1-btn" onclick="switchBusFloor(1)" class="flex-1 py-3 rounded-xl font-bold text-sm">ชั้นที่ 1</button>
+        <button id="bus-floor2-btn" onclick="switchBusFloor(2)" class="flex-1 py-3 rounded-xl font-bold text-sm">ชั้นที่ 2</button>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-6 justify-center items-start">
+        <div class="glass p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] relative shadow-xl border-white w-full lg:flex-1 text-center">
+            <div id="bus-wall-container" class="absolute inset-0 pointer-events-none"></div>
+            <div class="text-center mb-8"><p class="text-[8px] text-gray-300 tracking-[0.6em] font-bold uppercase">หน้ารถ / FRONT</p></div>
+            <div class="overflow-x-auto pb-4 custom-scrollbar">
+                <div id="bus-seat-map" class="grid gap-2 mx-auto min-w-fit px-2"></div>
+            </div>
+        </div>
+        <div class="w-full lg:w-64 text-center">
+            <div class="glass p-8 rounded-[2.5rem] border-white shadow-xl">
+                <p class="text-[10px] text-gray-400 uppercase font-bold mb-1 tracking-widest">ที่นั่งที่เลือก</p>
+                <div id="bus-display-seat" class="text-3xl font-bold text-[#00b272] mb-6">--</div>
+                <button id="bus-confirm-btn" onclick="confirmBusBooking()" class="w-full bg-[#00b272] text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-100 hover:bg-[#009661] transition">ยืนยันการจอง</button>
+            </div>
+        </div>
+    </div>
+</div>
     <div id="duty-page" class="hidden w-full max-w-5xl animate-pop px-2 mb-10">
         <div class="flex justify-between items-center mb-6">
             <button onclick="goToPage('landing-page')" class="flex items-center gap-2 text-[#00b272] font-bold text-sm bg-white px-4 py-2 rounded-xl shadow-sm border"><i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก</button>
@@ -218,20 +254,153 @@
         </div>
     </div>
 
-    <div id="admin-panel" class="hidden fixed inset-0 z-[300] bg-[#f8fafc] overflow-y-auto p-4 md:p-8">
-        <div class="max-w-6xl mx-auto">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b pb-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-sliders text-[#00b272] mr-2"></i>ระบบควบคุมหลักผู้ดูแลระบบ (Master Admin)</h2>
-                    <p class="text-sm text-slate-400">ควบคุม แก้ไข และลบข้อมูลทุกระบบในห้องเรียนได้จากหน้านี้</p>
+  <div id="admin-panel" class="hidden fixed inset-0 z-[300] bg-[#f8fafc] overflow-y-auto p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b pb-4">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800"><i class="fa-solid fa-sliders text-[#00b272] mr-2"></i>ระบบควบคุมหลักผู้ดูแลระบบ (Master Admin)</h2>
+                <p class="text-sm text-slate-400">เลือกหัวข้อด้านล่างเพื่อจัดการแต่ละระบบ</p>
+            </div>
+            <button onclick="document.getElementById('admin-panel').classList.add('hidden'); stopBusScanner(); goToPage('landing-page');" class="bg-slate-200 text-slate-600 px-6 py-4 rounded-2xl font-bold">กลับหน้าหลัก</button>
+        </div>
+
+        <!-- ============ แท็บหลัก ============ -->
+        <div class="flex flex-wrap gap-2 mb-6">
+            <button id="admtab-btn-room" onclick="switchAdminMainTab('room')" class="px-4 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-chair mr-1"></i> จองที่นั่งห้องเรียน</button>
+            <button id="admtab-btn-bus" onclick="switchAdminMainTab('bus')" class="px-4 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-bus mr-1"></i> จองที่นั่งรถบัส</button>
+            <button id="admtab-btn-duty" onclick="switchAdminMainTab('duty')" class="px-4 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-calendar-check mr-1"></i> เวร</button>
+            <button id="admtab-btn-fund" onclick="switchAdminMainTab('fund')" class="px-4 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-wallet mr-1"></i> กองทุนห้อง</button>
+            <button id="admtab-btn-vote" onclick="switchAdminMainTab('vote')" class="px-4 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-square-poll-horizontal mr-1"></i> โหวต</button>
+            <button id="admtab-btn-homework" onclick="switchAdminMainTab('homework')" class="px-4 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-book-bookmark mr-1"></i> การบ้าน</button>
+        </div>
+
+        <!-- ============================================================
+             แท็บ: จองที่นั่งห้องเรียน (ของเดิม ย้ายเข้ามาอยู่ในนี้)
+             ============================================================ -->
+        <div id="admtab-room">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="glass p-6 md:p-10 rounded-[2.5rem] relative min-h-[400px] flex flex-col items-center overflow-hidden shadow-sm">
+                        <p class="text-xs font-bold text-slate-400 mb-4 self-start uppercase tracking-wider"><i class="fa-solid fa-map-location-dot"></i> ดับเบิ้ลคลิกเพื่อบล็อก/ปลดบล็อก ที่นั่งในผัง</p>
+                        <div id="admin-wall-container" class="absolute inset-0 pointer-events-none"></div>
+                        <div class="overflow-x-auto w-full pb-4 custom-scrollbar">
+                            <div id="admin-seat-map" class="grid gap-2 mx-auto min-w-fit px-2"></div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
+                        <p class="text-sm font-bold text-slate-700 border-b pb-2"><i class="fa-solid fa-chair text-green-600 mr-1"></i> รายชื่อผู้จองที่นั่งในระบบขณะนี้</p>
+                        <div class="overflow-x-auto max-h-60 custom-scrollbar">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="text-gray-400 border-b">
+                                        <th class="pb-2 font-medium">ที่นั่ง</th>
+                                        <th class="pb-2 font-medium text-right">รหัสนักเรียน</th>
+                                        <th class="pb-2 font-medium text-right">การจัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-bookings-rows" class="divide-y text-slate-700 font-medium"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <div class="flex w-full md:w-auto gap-3">
-                    <button onclick="document.getElementById('admin-panel').classList.add('hidden'); goToPage('landing-page');" class="flex-1 md:flex-none bg-slate-200 text-slate-600 px-6 py-4 rounded-2xl font-bold">กลับหน้าหลัก</button>
-                    <button onclick="saveAndCloseAdmin()" id="admin-save-btn" class="flex-[2] md:flex-none bg-[#00b272] text-white px-10 py-4 rounded-2xl font-bold shadow-xl">บันทึกโครงสร้างผังที่นั่ง</button>
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-widest"><i class="fa-solid fa-table-cells"></i> ตั้งค่ามิติตารางผังที่นั่ง</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="text-[10px] block mb-1">Rows (แถว)</label><input id="inp-rows" type="number" class="w-full bg-slate-50 p-3 rounded-xl border text-center font-bold" onchange="resetLayout()"></div>
+                            <div><label class="text-[10px] block mb-1">Cols (หลัก)</label><input id="inp-cols" type="number" class="w-full bg-slate-50 p-3 rounded-xl border text-center font-bold" onchange="resetLayout()"></div>
+                        </div>
+                    </div>
+                    <button id="admin-save-btn" onclick="saveAndCloseAdmin()" class="w-full bg-[#00b272] text-white py-4 rounded-2xl font-bold shadow-xl">บันทึกโครงสร้างผังที่นั่งห้องเรียน</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             แท็บ: จองที่นั่งรถบัส (ใหม่)
+             ============================================================ -->
+        <div id="admtab-bus" class="hidden">
+            <div class="flex gap-3 max-w-xs mb-4">
+                <button id="bus-adm-floor1-btn" onclick="switchBusAdminFloor(1)" class="flex-1 py-2 rounded-xl text-xs font-bold">ชั้นที่ 1</button>
+                <button id="bus-adm-floor2-btn" onclick="switchBusAdminFloor(2)" class="flex-1 py-2 rounded-xl text-xs font-bold">ชั้นที่ 2</button>
+            </div>
+
+            <div class="flex flex-wrap gap-2 mb-4">
+                <button id="bus-tabbtn-layout" onclick="switchBusAdminTab('layout')" class="px-4 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-table-cells mr-1"></i> ผังที่นั่ง</button>
+                <button id="bus-tabbtn-time" onclick="switchBusAdminTab('time')" class="px-4 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-clock mr-1"></i> เวลาเปิดจอง</button>
+                <button id="bus-tabbtn-bookings" onclick="switchBusAdminTab('bookings')" class="px-4 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-list-check mr-1"></i> รายชื่อผู้จอง</button>
+                <button id="bus-tabbtn-scan" onclick="switchBusAdminTab('scan')" class="px-4 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-qrcode mr-1"></i> สแกนเช็คชื่อ</button>
+            </div>
+
+            <div id="bus-tab-layout">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-3xl border shadow-sm relative">
+                        <p class="text-xs text-slate-400 font-bold mb-4">คลิกที่ช่องเพื่อแก้ไข: เปลี่ยนชื่อที่นั่ง / ลบที่นั่ง (ทำเป็นทางเดิน) / ตั้งเป็นที่นั่งคนขับ</p>
+                        <div id="bus-admin-wall-container" class="absolute inset-0 pointer-events-none"></div>
+                        <div class="overflow-x-auto pb-2 custom-scrollbar">
+                            <div id="bus-admin-seat-map" class="grid gap-1.5 mx-auto min-w-fit"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-3">
+                            <p class="text-xs font-bold text-slate-700 border-b pb-2">ขนาดผังที่นั่ง</p>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div><label class="text-[10px] block mb-1">แถว (Rows)</label><input id="bus-inp-rows" type="number" class="w-full bg-slate-50 p-2.5 rounded-xl border text-center font-bold" onchange="resetBusLayout()"></div>
+                                <div><label class="text-[10px] block mb-1">คอลัมน์ (Cols)</label><input id="bus-inp-cols" type="number" class="w-full bg-slate-50 p-2.5 rounded-xl border text-center font-bold" onchange="resetBusLayout()"></div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-3">
+                            <p class="text-xs font-bold text-slate-700 border-b pb-2">จุดสังเกต (หน้าต่าง/ประตู/ทีวี/บันได)</p>
+                            <button onclick="openBusObjectModal()" class="w-full bg-slate-800 text-white py-2.5 rounded-xl text-xs font-bold">+ เพิ่มจุดสังเกต</button>
+                            <p class="text-[10px] text-gray-400">คลิกที่จุดสังเกตบนผัง (แถบสี) เพื่อลบออก</p>
+                        </div>
+                        <button id="bus-admin-save-btn" onclick="saveBusConfig()" class="w-full bg-[#00b272] text-white py-4 rounded-2xl font-bold shadow-lg">บันทึกผังที่นั่งรถบัส</button>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded-3xl border shadow-sm mb-8">
+            <div id="bus-tab-time" class="hidden">
+                <div class="bg-white p-6 rounded-3xl border shadow-sm max-w-md space-y-4">
+                    <p class="text-sm font-bold text-slate-700 border-b pb-2"><i class="fa-solid fa-clock text-amber-500 mr-1"></i> ตั้งเวลาเปิดให้จองที่นั่ง</p>
+                    <p class="text-xs text-slate-400">นักเรียนจะเข้ามาดูผังได้เสมอ แต่จะกดจองไม่ได้จนกว่าจะถึงเวลานี้ (ใช้ร่วมกันทั้งชั้น 1 และชั้น 2)</p>
+                    <input id="bus-open-time-input" type="datetime-local" class="w-full bg-slate-50 p-3 rounded-xl border text-sm">
+                    <button onclick="saveBusOpenTime()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold text-sm shadow">บันทึกเวลาเปิดจอง</button>
+                </div>
+            </div>
+
+            <div id="bus-tab-bookings" class="hidden">
+                <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                    <p class="text-sm font-bold text-slate-700 border-b pb-2 mb-4"><i class="fa-solid fa-list-check text-blue-500 mr-1"></i> รายชื่อนักเรียนที่จองที่นั่งรถบัส (กดไอคอนตาเพื่อดูตั๋ว)</p>
+                    <div id="bus-admin-bookings-list" class="max-h-[500px] overflow-y-auto custom-scrollbar"></div>
+                </div>
+            </div>
+
+            <div id="bus-tab-scan" class="hidden">
+                <div class="bg-white p-6 rounded-3xl border shadow-sm max-w-md mx-auto text-center">
+                    <p class="text-sm font-bold text-slate-700 border-b pb-3 mb-4"><i class="fa-solid fa-qrcode text-sky-500 mr-1"></i> สแกน QR ตั๋วของนักเรียนเพื่อตรวจสอบและเช็คชื่อขึ้นรถ</p>
+                    <div id="bus-qr-reader" class="rounded-2xl overflow-hidden"></div>
+
+                    <div id="bus-scan-detail" class="hidden mt-4 p-4 rounded-2xl bg-slate-50 border text-left">
+                        <p class="text-[10px] text-gray-400 uppercase">ชื่อผู้โดยสาร</p>
+                        <p id="scan-name" class="font-bold text-slate-800 mb-2">--</p>
+                        <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+                            <div><p class="text-gray-400">เลขประจำตัว</p><p id="scan-id" class="font-bold">--</p></div>
+                            <div><p class="text-gray-400">ที่นั่ง</p><p id="scan-seat" class="font-bold">--</p></div>
+                        </div>
+                        <label class="flex items-center gap-2 text-sm font-bold text-slate-700 mb-4 bg-white p-3 rounded-xl border cursor-pointer">
+                            <input type="checkbox" id="scan-checkin-box" class="w-5 h-5 accent-[#00b272]"> ยืนยันขึ้นรถแล้ว
+                        </label>
+                        <button onclick="confirmBusCheckin()" class="w-full bg-[#00b272] text-white py-3 rounded-xl font-bold text-sm">บันทึกผล</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             แท็บ: เวร (ของเดิม)
+             ============================================================ -->
+        <div id="admtab-duty" class="hidden">
+            <div class="bg-white p-6 rounded-3xl border shadow-sm mb-6">
                 <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
                     <i class="fa-solid fa-chart-pie text-[#00b272]"></i> แดชบอร์ดสรุปผลการปฏิบัติเวรรายสัปดาห์
                 </h3>
@@ -264,97 +433,79 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-2 space-y-6">
-                    <div class="glass p-6 md:p-10 rounded-[2.5rem] relative min-h-[400px] flex flex-col items-center overflow-hidden shadow-sm">
-                        <p class="text-xs font-bold text-slate-400 mb-4 self-start uppercase tracking-wider"><i class="fa-solid fa-map-location-dot"></i> ดับเบิ้ลคลิกเพื่อบล็อก/ปลดบล็อก ที่นั่งในผัง</p>
-                        <div id="admin-wall-container" class="absolute inset-0 pointer-events-none"></div>
-                        <div class="overflow-x-auto w-full pb-4 custom-scrollbar">
-                            <div id="admin-seat-map" class="grid gap-2 mx-auto min-w-fit px-2"></div>
-                        </div>
+            <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <p class="text-sm font-bold text-slate-700"><i class="fa-solid fa-calendar-days text-amber-500 mr-1"></i> จัดการระบบเวรประจำวัน</p>
+                    <button onclick="resetAllDutiesAdmin()" class="bg-red-50 text-red-600 border border-red-200 text-[10px] font-bold px-2.5 py-1 rounded-xl hover:bg-red-100 transition">ล้างข้อมูลเวรทั้งหมด</button>
+                </div>
+                <div id="admin-duty-list" class="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar text-xs"></div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             แท็บ: กองทุนห้อง (ของเดิม)
+             ============================================================ -->
+        <div id="admtab-fund" class="hidden">
+            <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4 max-w-xl">
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b pb-2"><i class="fa-solid fa-wallet text-emerald-500"></i> จัดการระบบกองทุนห้อง</p>
+                <div>
+                    <label class="text-[10px] block mb-1 font-bold text-slate-500">หัวข้อเก็บเงินรอบนี้</label>
+                    <input id="adm-fund-title" type="text" class="w-full bg-slate-50 p-2.5 rounded-xl border text-sm" placeholder="ค่าบอร์ดนิทรรศการ ม.3">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] block mb-1 font-bold text-slate-500">จำนวนเงินต่อคน (บาท)</label>
+                        <input id="adm-fund-amount" type="number" class="w-full bg-slate-50 p-2.5 rounded-xl border text-center font-bold text-sm" placeholder="20">
                     </div>
-
-                    <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-                        <p class="text-sm font-bold text-slate-700 border-b pb-2"><i class="fa-solid fa-chair text-green-600 mr-1"></i> รายชื่อผู้จองที่นั่งในระบบขณะนี้</p>
-                        <div class="overflow-x-auto max-h-60 custom-scrollbar">
-                            <table class="w-full text-left border-collapse text-xs">
-                                <thead>
-                                    <tr class="text-gray-400 border-b">
-                                        <th class="pb-2 font-medium">ที่นั่ง</th>
-                                        <th class="pb-2 font-medium text-right">รหัสนักเรียน</th>
-                                        <th class="pb-2 font-medium text-right">การจัดการ</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="admin-bookings-rows" class="divide-y text-slate-700 font-medium"></tbody>
-                            </table>
-                        </div>
+                    <div>
+                        <label class="text-[10px] block mb-1 font-bold text-slate-500">เบอร์พร้อมเพย์รับเงิน</label>
+                        <input id="adm-fund-pp" type="text" class="w-full bg-slate-50 p-2.5 rounded-xl border text-center text-sm" placeholder="095xxxxxxx">
                     </div>
+                </div>
+                <button onclick="saveFundConfig()" class="w-full bg-emerald-600 text-white text-xs py-2.5 rounded-xl font-bold shadow">อัปเดตแคมเปญเก็บเงิน</button>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-                            <div class="flex justify-between items-center border-b pb-2">
-                                <p class="text-sm font-bold text-slate-700"><i class="fa-solid fa-calendar-days text-amber-500 mr-1"></i> จัดการระบบเวรประจำวัน</p>
-                                <button onclick="resetAllDutiesAdmin()" class="bg-red-50 text-red-600 border border-red-200 text-[10px] font-bold px-2.5 py-1 rounded-xl hover:bg-red-100 transition">ล้างข้อมูลเวรทั้งหมด</button>
-                            </div>
-                            <div id="admin-duty-list" class="space-y-2 max-h-52 overflow-y-auto custom-scrollbar text-xs"></div>
-                        </div>
-
-                        <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-                            <p class="text-sm font-bold text-slate-700 border-b pb-2"><i class="fa-solid fa-book-bookmark text-blue-500 mr-1"></i> รายการภารกิจการบ้านในระบบ</p>
-                            <div id="admin-homework-list" class="space-y-2 max-h-52 overflow-y-auto custom-scrollbar text-xs"></div>
-                        </div>
+                <div class="border-t pt-4">
+                    <p class="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-2">🟢 บันทึกคนจ่าย "เงินสด" (สำหรับแอดมิน)</p>
+                    <div class="space-y-2">
+                        <input id="cash-student-id" type="text" placeholder="รหัสนักเรียน เช่น 14599" class="w-full bg-slate-50 p-2 text-xs border rounded-xl" oninput="fetchStudentNameForCash(this.value)">
+                        <div id="cash-name-preview" class="text-[11px] text-slate-500 px-2 font-medium bg-slate-50 py-1.5 rounded-lg border border-dashed border-slate-200 min-h-[28px] flex items-center">พิมพ์รหัสเพื่อค้นหาชื่อ...</div>
+                        <button onclick="addCashPaymentByAdmin()" class="w-full bg-orange-500 text-white text-xs py-2 rounded-xl font-bold shadow">บันทึกรับเงินสด</button>
                     </div>
                 </div>
 
-                <div class="space-y-6">
-                    <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest border-b pb-2"><i class="fa-solid fa-wallet text-emerald-500"></i> จัดการระบบกองทุนห้อง</p>
-                        <div>
-                            <label class="text-[10px] block mb-1 font-bold text-slate-500">หัวข้อเก็บเงินรอบนี้</label>
-                            <input id="adm-fund-title" type="text" class="w-full bg-slate-50 p-2.5 rounded-xl border text-sm" placeholder="ค่าบอร์ดนิทรรศการ ม.3">
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="text-[10px] block mb-1 font-bold text-slate-500">จำนวนเงินต่อคน (บาท)</label>
-                                <input id="adm-fund-amount" type="number" class="w-full bg-slate-50 p-2.5 rounded-xl border text-center font-bold text-sm" placeholder="20">
-                            </div>
-                            <div>
-                                <label class="text-[10px] block mb-1 font-bold text-slate-500">เบอร์พร้อมเพย์รับเงิน</label>
-                                <input id="adm-fund-pp" type="text" class="w-full bg-slate-50 p-2.5 rounded-xl border text-center text-sm" placeholder="095xxxxxxx">
-                            </div>
-                        </div>
-                        <button onclick="saveFundConfig()" class="w-full bg-emerald-600 text-white text-xs py-2.5 rounded-xl font-bold shadow">อัปเดตแคมเปญเก็บเงิน</button>
-                        
-                        <div class="border-t pt-4">
-                            <p class="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-2">🟢 บันทึกคนจ่าย "เงินสด" (สำหรับแอดมิน)</p>
-                            <div class="space-y-2">
-                                <input id="cash-student-id" type="text" placeholder="รหัสนักเรียน เช่น 14599" class="w-full bg-slate-50 p-2 text-xs border rounded-xl" oninput="fetchStudentNameForCash(this.value)">
-                                <div id="cash-name-preview" class="text-[11px] text-slate-500 px-2 font-medium bg-slate-50 py-1.5 rounded-lg border border-dashed border-slate-200 min-h-[28px] flex items-center">พิมพ์รหัสเพื่อค้นหาชื่อ...</div>
-                                <button onclick="addCashPaymentByAdmin()" class="w-full bg-orange-500 text-white text-xs py-2 rounded-xl font-bold shadow">บันทึกรับเงินสด</button>
-                            </div>
-                        </div>
-
-                        <div class="border-t pt-4 bg-red-50/40 p-3 rounded-2xl border border-dashed border-red-200">
-                            <p class="text-[10px] font-bold text-red-600 uppercase tracking-wider mb-2">🔴 บันทึกรายการ "ถอนเงิน / ค่าใช้จ่าย"</p>
-                            <div class="space-y-2">
-                                <input id="withdraw-title" type="text" placeholder="ระบุเหตุผลการถอน เช่น ซื้อกระดาษรายงาน" class="w-full bg-white p-2 text-xs border rounded-xl outline-none focus:border-red-400">
-                                <input id="withdraw-amount" type="number" placeholder="จำนวนเงินที่ถอน (บาท)" class="w-full bg-white p-2 text-xs border rounded-xl text-center font-bold outline-none focus:border-red-400">
-                                <button onclick="addFundWithdrawalByAdmin()" class="w-full bg-red-500 hover:bg-red-600 text-white text-xs py-2 rounded-xl font-bold shadow transition">ยืนยันบันทึกยอดถอนเงิน</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                        <p class="text-[11px] font-bold text-slate-400 uppercase mb-4 tracking-widest"><i class="fa-solid fa-table-cells"></i> ตั้งค่ามิติตารางผังที่นั่ง</p>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div><label class="text-[10px] block mb-1">Rows (แถว)</label><input id="inp-rows" type="number" class="w-full bg-slate-50 p-3 rounded-xl border text-center font-bold" onchange="resetLayout()"></div>
-                            <div><label class="text-[10px] block mb-1">Cols (หลัก)</label><input id="inp-cols" type="number" class="w-full bg-slate-50 p-3 rounded-xl border text-center font-bold" onchange="resetLayout()"></div>
-                        </div>
+                <div class="border-t pt-4 bg-red-50/40 p-3 rounded-2xl border border-dashed border-red-200">
+                    <p class="text-[10px] font-bold text-red-600 uppercase tracking-wider mb-2">🔴 บันทึกรายการ "ถอนเงิน / ค่าใช้จ่าย"</p>
+                    <div class="space-y-2">
+                        <input id="withdraw-title" type="text" placeholder="ระบุเหตุผลการถอน เช่น ซื้อกระดาษรายงาน" class="w-full bg-white p-2 text-xs border rounded-xl outline-none focus:border-red-400">
+                        <input id="withdraw-amount" type="number" placeholder="จำนวนเงินที่ถอน (บาท)" class="w-full bg-white p-2 text-xs border rounded-xl text-center font-bold outline-none focus:border-red-400">
+                        <button onclick="addFundWithdrawalByAdmin()" class="w-full bg-red-500 hover:bg-red-600 text-white text-xs py-2 rounded-xl font-bold shadow transition">ยืนยันบันทึกยอดถอนเงิน</button>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- ============================================================
+             แท็บ: โหวต (ใหม่)
+             ============================================================ -->
+        <div id="admtab-vote" class="hidden">
+            <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                <p class="text-sm font-bold text-slate-700 border-b pb-2 mb-4"><i class="fa-solid fa-square-poll-horizontal text-rose-500 mr-1"></i> หัวข้อโหวตทั้งหมดในระบบ</p>
+                <div id="admin-vote-list" class="max-h-[500px] overflow-y-auto custom-scrollbar"></div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             แท็บ: การบ้าน (ของเดิม)
+             ============================================================ -->
+        <div id="admtab-homework" class="hidden">
+            <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                <p class="text-sm font-bold text-slate-700 border-b pb-2 mb-4"><i class="fa-solid fa-book-bookmark text-blue-500 mr-1"></i> รายการภารกิจการบ้านในระบบ</p>
+                <div id="admin-homework-list" class="max-h-[500px] overflow-y-auto custom-scrollbar text-xs"></div>
+            </div>
+        </div>
+
     </div>
+</div>
 
     <div id="copy-report-modal" class="hidden fixed inset-0 z-[650] bg-black/50 backdrop-blur-md flex items-center justify-center p-4">
         <div class="glass max-w-sm w-full p-6 rounded-[2.5rem] shadow-2xl animate-pop text-center">
@@ -376,7 +527,6 @@
             </div>
         </div>
     </div>
-
     <div id="obj-modal" class="hidden fixed inset-0 z-[500] bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
         <div class="glass max-w-sm w-full p-8 rounded-[2.5rem] shadow-2xl animate-pop">
             <h3 class="text-xl font-bold mb-6 text-center">เพิ่มวัตถุ</h3>
@@ -395,8 +545,7 @@
             </div>
         </div>
     </div>
-
-    <div id="success-modal" class="hidden fixed inset-0 z-[600] bg-black/60 backdrop-blur-xl flex items-center justify-center p-4">
+  <div id="success-modal" class="hidden fixed inset-0 z-[600] bg-black/60 backdrop-blur-xl flex items-center justify-center p-4">
         <div class="glass max-w-[340px] w-full p-6 text-center rounded-[3rem] animate-pop shadow-2xl border-white border-2">
             <div class="w-14 h-14 bg-[#00b272] text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fa-solid fa-check"></i></div>
             <h2 class="text-2xl font-bold mb-1 text-slate-800">จองสำเร็จ!</h2>
@@ -410,8 +559,7 @@
             <button onclick="closeSuccessModal()" class="w-full py-2 text-slate-400 font-bold text-[11px] uppercase">ปิด</button>
         </div>
     </div>
-
-    <div id="custom-alert-modal" class="hidden fixed inset-0 z-[700] bg-black/40 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 opacity-0">
+  <div id="custom-alert-modal" class="hidden fixed inset-0 z-[700] bg-black/40 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300 opacity-0">
         <div class="glass max-w-sm w-full p-6 text-center rounded-[2.5rem] shadow-2xl border-white border-2 scale-95 transition-all duration-300">
             <div id="alert-icon-box" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-lg">
                 <i id="alert-icon" class="fa-solid"></i>
@@ -419,12 +567,109 @@
             <h3 id="alert-title" class="text-xl font-bold text-slate-800 mb-2">---</h3>
             <p id="alert-message" class="text-xs text-slate-500 font-medium px-2 leading-relaxed mb-6">---</p>
             <div id="alert-action-buttons" class="w-full flex gap-3">
-                <button id="alert-submit-btn" onclick="closeCustomAlert()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-xs font-bold shadow-md transition active:scale-98">
-                    ตกลง
-                </button>
+                <button id="alert-submit-btn" onclick="closeCustomAlert()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-xs font-bold shadow-md transition active:scale-98">ตกลง</button>
             </div>
         </div>
     </div>
+    <div id="bus-ticket-modal" class="hidden fixed inset-0 z-[600] bg-black/70 backdrop-blur-xl flex items-center justify-center p-4">
+    <div class="max-w-md w-full">
+        <div class="bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-pop border-2 border-slate-100">
+            <div class="bg-sky-500 text-white px-6 py-4 flex justify-between items-center">
+                <div>
+                    <p class="text-[10px] tracking-[0.3em] opacity-80 font-bold">BOARDING PASS</p>
+                    <p class="text-lg font-bold">ตั๋วรถบัสทัศนศึกษา</p>
+                </div>
+                <i class="fa-solid fa-bus text-2xl opacity-80"></i>
+            </div>
+            <div class="p-6 flex gap-4">
+                <div class="flex-1 space-y-3">
+                    <div>
+                        <p class="text-[9px] text-gray-400 uppercase tracking-wider">ชื่อผู้โดยสาร</p>
+                        <p id="bus-ticket-name" class="text-base font-bold text-slate-800">--</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><p class="text-[9px] text-gray-400 uppercase tracking-wider">เลขประจำตัว</p><p id="bus-ticket-id" class="text-sm font-bold text-slate-700">--</p></div>
+                        <div><p class="text-[9px] text-gray-400 uppercase tracking-wider">วันที่จอง</p><p id="bus-ticket-date" class="text-sm font-bold text-slate-700">--</p></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><p class="text-[9px] text-gray-400 uppercase tracking-wider">ชั้น</p><p id="bus-ticket-floor" class="text-sm font-bold text-slate-700">--</p></div>
+                        <div><p class="text-[9px] text-gray-400 uppercase tracking-wider">เวลาที่จอง</p><p id="bus-ticket-time" class="text-sm font-bold text-slate-700">--</p></div>
+                    </div>
+                </div>
+                <div class="flex flex-col items-center justify-center border-l-2 border-dashed border-slate-200 pl-4">
+                    <p class="text-[9px] text-gray-400 uppercase mb-1">ที่นั่ง</p>
+                    <p id="bus-ticket-seat" class="text-3xl font-bold text-[#00b272]">--</p>
+                </div>
+            </div>
+            <div class="relative">
+                <div class="absolute -left-3 -top-3 w-6 h-6 bg-[#f8fafc] rounded-full"></div>
+                <div class="absolute -right-3 -top-3 w-6 h-6 bg-[#f8fafc] rounded-full"></div>
+                <div class="border-t-2 border-dashed border-slate-200 mx-6"></div>
+            </div>
+            <div class="p-6 flex flex-col items-center gap-2 bg-slate-50">
+                <div id="bus-ticket-qr" class="flex justify-center"></div>
+                <p id="bus-ticket-checkin" class="text-[11px] font-bold text-gray-400">--</p>
+            </div>
+        </div>
+        <button onclick="closeBusTicket()" class="w-full mt-4 py-2 text-white font-bold text-[11px] uppercase">ปิดหน้าต่าง</button>
+    </div>
+</div>
+   <div id="bus-cell-modal" class="hidden fixed inset-0 z-[500] bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass max-w-sm w-full p-8 rounded-[2.5rem] shadow-2xl animate-pop">
+        <h3 class="text-lg font-bold mb-6 text-center">แก้ไขช่องนี้</h3>
+        <input type="hidden" id="bus-cell-r">
+        <input type="hidden" id="bus-cell-c">
+        <div class="space-y-4">
+            <div>
+                <label class="text-[10px] block mb-1 font-bold text-slate-500">ประเภท</label>
+                <select id="bus-cell-type" class="w-full bg-slate-50 p-3 rounded-xl border text-sm" onchange="document.getElementById('bus-cell-label-box').classList.toggle('hidden', this.value !== 'seat')">
+                    <option value="seat">ที่นั่ง</option>
+                    <option value="empty">ทางเดิน / ช่องว่าง (ไม่มีที่นั่ง)</option>
+                    <option value="driver">ที่นั่งคนขับ</option>
+                </select>
+            </div>
+            <div id="bus-cell-label-box">
+                <label class="text-[10px] block mb-1 font-bold text-slate-500">ชื่อที่นั่ง (แก้ไขได้)</label>
+                <input id="bus-cell-label" type="text" placeholder="เช่น 1A" class="w-full bg-slate-50 p-3 rounded-xl border text-sm text-center font-bold">
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button onclick="document.getElementById('bus-cell-modal').classList.add('hidden')" class="flex-1 py-3 font-bold text-slate-400">ยกเลิก</button>
+                <button onclick="saveBusCellEditor()" class="flex-1 py-3 bg-[#00b272] text-white rounded-xl font-bold">บันทึก</button>
+            </div>
+        </div>
+    </div>
+</div>
+    <div id="bus-obj-modal" class="hidden fixed inset-0 z-[500] bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass max-w-sm w-full p-8 rounded-[2.5rem] shadow-2xl animate-pop">
+        <h3 class="text-xl font-bold mb-6 text-center">เพิ่มจุดสังเกต</h3>
+        <div class="space-y-5">
+            <div>
+                <label class="text-[10px] block mb-1 font-bold text-slate-500">ประเภท</label>
+                <select id="bus-obj-type" class="w-full bg-slate-50 p-3 rounded-xl border text-sm">
+                    <option value="window">หน้าต่าง</option>
+                    <option value="door">ประตู</option>
+                    <option value="tv">ทีวี</option>
+                    <option value="stairs">บันได</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-[10px] block mb-1 font-bold text-slate-500">ด้าน</label>
+                <select id="bus-obj-side" class="w-full bg-slate-50 p-3 rounded-xl border text-sm">
+                    <option value="left">ซ้าย</option>
+                    <option value="right">ขวา</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-[10px] block mb-1 font-bold text-slate-500">ตำแหน่งความสูง (0-90%)</label>
+                <input type="range" id="bus-obj-pos" min="0" max="90" value="20" class="w-full accent-sky-500">
+            </div>
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('bus-obj-modal').classList.add('hidden')" class="flex-1 py-3 font-bold text-slate-400">ยกเลิก</button>
+                <button onclick="confirmAddBusObject()" class="flex-1 py-3 bg-[#00b272] text-white rounded-xl font-bold">ตกลง</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script src="js/config.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/auth.js"></script>
@@ -434,5 +679,7 @@
 <script src="js/fund.js"></script>
 <script src="js/vote.js"></script>
 <script src="js/admin.js"></script>
+<script src="js/bus-booking.js"></script>
+<script src="js/bus-admin.js"></script>
 </body>
 </html>
