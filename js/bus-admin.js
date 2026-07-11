@@ -52,11 +52,14 @@ function renderBusAdminLayout() {
             const cell = cells[key] || { type: 'seat', label: BUS_ALPHABET[r % 26] + (c + 1) };
 
             const div = document.createElement('div');
-            div.className = 'aspect-square rounded-lg flex items-center justify-center text-[9px] font-bold cursor-pointer border transition ' +
-                (cell.type === 'seat' ? 'bg-white border-slate-200 text-slate-500 hover:border-[#00b272]' :
-                 cell.type === 'driver' ? 'bg-slate-700 text-white' :
-                 'bg-slate-100 border-dashed border-slate-300 text-slate-300');
-            div.innerText = cell.type === 'seat' ? cell.label : (cell.type === 'driver' ? '🚘' : '');
+            let styleClass = 'bg-white border-slate-200 text-slate-500 hover:border-[#00b272]';
+            let content = cell.label;
+            if (cell.type === 'driver') { styleClass = 'bg-slate-700 text-white'; content = '🚘'; }
+            if (cell.type === 'stairs') { styleClass = 'bg-slate-400 text-white'; content = '🪜'; }
+            if (cell.type === 'empty') { styleClass = 'bg-slate-100 border-dashed border-slate-300 text-slate-300'; content = ''; }
+
+            div.className = 'aspect-square rounded-lg flex items-center justify-center text-[9px] font-bold cursor-pointer border transition ' + styleClass;
+            div.innerText = content;
             div.onclick = () => openBusCellEditor(r, c, cell);
             container.appendChild(div);
         }
@@ -100,18 +103,33 @@ function resetBusLayout() {
     renderBusAdminLayout();
 }
 
+// ---- จุดสังเกต: หน้าต่าง/ประตู (ติดผนัง) + ทีวี (วางได้ทุกจุด) ----
 function openBusObjectModal() {
+    document.getElementById('bus-obj-type').value = 'window';
+    toggleBusObjFields();
     document.getElementById('bus-obj-modal').classList.remove('hidden');
 }
 
-function confirmAddBusObject() {
-    const pos = document.getElementById('bus-obj-pos').value;
+function toggleBusObjFields() {
     const type = document.getElementById('bus-obj-type').value;
-    const side = document.getElementById('bus-obj-side').value;
+    document.getElementById('bus-obj-wall-fields').classList.toggle('hidden', type === 'tv');
+    document.getElementById('bus-obj-tv-fields').classList.toggle('hidden', type !== 'tv');
+}
 
+function confirmAddBusObject() {
+    const type = document.getElementById('bus-obj-type').value;
     const objKey = busAdminFloor === 1 ? 'floor1_objects' : 'floor2_objects';
     if (!busConfig[objKey]) busConfig[objKey] = [];
-    busConfig[objKey].push({ type, side, top: parseInt(pos) });
+
+    if (type === 'tv') {
+        const top = parseInt(document.getElementById('bus-obj-tv-top').value);
+        const left = parseInt(document.getElementById('bus-obj-tv-left').value);
+        busConfig[objKey].push({ type: 'tv', top, left });
+    } else {
+        const pos = parseInt(document.getElementById('bus-obj-pos').value);
+        const side = document.getElementById('bus-obj-side').value;
+        busConfig[objKey].push({ type, side, top: pos });
+    }
 
     document.getElementById('bus-obj-modal').classList.add('hidden');
     renderBusAdminObjects();
@@ -122,14 +140,22 @@ function renderBusAdminObjects() {
     container.innerHTML = '';
     const objKey = busAdminFloor === 1 ? 'floor1_objects' : 'floor2_objects';
     const objects = busConfig[objKey] || [];
-    const classMap = { window: 'win-v', door: 'door-v', tv: 'tv-v', stairs: 'stairs-v' };
+    const wallClassMap = { window: 'win-v', door: 'door-v' };
 
     objects.forEach((obj, idx) => {
         const w = document.createElement('div');
-        w.className = `wall-v ${classMap[obj.type] || ''}`;
-        w.style.top = obj.top + '%';
-        w.style[obj.side] = '-4px';
-        w.style.height = '60px';
+        if (obj.type === 'tv') {
+            w.className = 'tv-h';
+            w.style.position = 'absolute';
+            w.style.top = obj.top + '%';
+            w.style.left = obj.left + '%';
+            w.style.transform = 'translate(-50%, -50%)';
+        } else {
+            w.className = `wall-v ${wallClassMap[obj.type] || ''}`;
+            w.style.top = obj.top + '%';
+            w.style[obj.side] = '-4px';
+            w.style.height = '60px';
+        }
         w.style.pointerEvents = 'auto';
         w.style.cursor = 'pointer';
         w.title = 'คลิกเพื่อลบจุดนี้';
