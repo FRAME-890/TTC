@@ -202,8 +202,8 @@ function renderTicketModal(booking) {
     qrBox.innerHTML = '';
     new QRCode(qrBox, {
         text: JSON.stringify({ bookingId: booking.id, sid: booking.student_id }),
-        width: 130,
-        height: 130
+        width: 100,
+        height: 100
     });
 
     document.getElementById('bus-ticket-modal').classList.remove('hidden');
