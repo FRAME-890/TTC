@@ -1,4 +1,4 @@
-      { font-family: 'Kanit', sans-serif; background-color: #f0f7f2; }
+  body { font-family: 'Kanit', sans-serif; background-color: #f0f7f2; }
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.5); }
         
         .seat { 
