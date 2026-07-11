@@ -23,8 +23,54 @@ async function openAdmin() {
             
             await loadAdminDashboardData();
             renderAdminMap();
+            await loadBusData();
+            switchAdminMainTab('room');
         }
 
+function switchAdminMainTab(tab) {
+    const tabs = ['room', 'bus', 'duty', 'fund', 'vote', 'homework'];
+    tabs.forEach(t => {
+        document.getElementById(`admtab-${t}`).classList.toggle('hidden', t !== tab);
+        document.getElementById(`admtab-btn-${t}`).className = t === tab
+            ? 'px-4 py-2 rounded-xl text-xs font-bold bg-[#00b272] text-white transition'
+            : 'px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-500 transition';
+    });
+
+    if (tab === 'bus') {
+        switchBusAdminTab('layout');
+    } else {
+        stopBusScanner(); // ปิดกล้องสแกนเมื่อออกจากแท็บรถบัส กันกล้องค้าง
+    }
+
+    if (tab === 'vote') {
+        loadVoteData().then(renderAdminVoteList);
+    }
+}
+
+function renderAdminVoteList() {
+    const container = document.getElementById('admin-vote-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!activePolls || activePolls.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-400 italic py-4">ยังไม่มีหัวข้อโหวตในระบบ</p>';
+        return;
+    }
+
+    activePolls.forEach(poll => {
+        const count = poll.votesData ? poll.votesData.length : 0;
+        const row = document.createElement('div');
+        row.className = 'flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 mb-2 text-xs';
+        row.innerHTML = `
+            <div>
+                <p class="font-bold text-slate-800">${poll.question}</p>
+                <p class="text-gray-400 text-[10px] mt-1">${count} โหวต</p>
+            </div>
+            <button onclick="deletePoll(${poll.id})" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash-can"></i></button>
+        `;
+        container.appendChild(row);
+    });
+}
         async function loadAdminDashboardData() {
             try {
                 const { data: bookings } = await _supabase.from('bookings').select('*').order('seat_number');
