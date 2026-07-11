@@ -14,9 +14,7 @@ async function loadBusData() {
     busBookings = bookings || [];
 
     myBusBooking = busBookings.find(b => String(b.student_id) === String(userData.student_id)) || null;
-    currentBusFloor = 1;
-    selectedBusSeat = null;
-    renderBusUI();
+    if (document.getElementById('bus-seat-map')) renderBusUI();
 }
 
 function switchBusFloor(floor) {
@@ -87,7 +85,6 @@ function renderBusMap() {
                 continue;
             }
 
-            // ที่นั่งปกติ
             const booking = busBookings.find(b => b.floor === currentBusFloor && b.seat_key === key);
             const isMine = booking && String(booking.student_id) === String(userData.student_id);
             const isSelected = selectedBusSeat && selectedBusSeat.floor === currentBusFloor && selectedBusSeat.key === key;
@@ -165,30 +162,40 @@ async function confirmBusBooking() {
     showMyBusTicket();
 }
 
+// ---- BOARDING PASS TICKET ----
+// ใช้ร่วมกัน 2 ที่: นักเรียนดูตั๋วตัวเอง (showMyBusTicket) และแอดมินดูตั๋วของทุกคน (viewBusTicketAdmin ใน bus-admin.js)
+function renderTicketModal(booking) {
+    const bookedDate = new Date(booking.booked_at);
+
+    document.getElementById('bus-ticket-name').innerText = booking.name;
+    document.getElementById('bus-ticket-id').innerText = booking.student_id;
+    document.getElementById('bus-ticket-floor').innerText = 'ชั้น ' + booking.floor;
+    document.getElementById('bus-ticket-seat').innerText = booking.seat_label;
+    document.getElementById('bus-ticket-date').innerText = bookedDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+    document.getElementById('bus-ticket-time').innerText = bookedDate.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+    const checkinEl = document.getElementById('bus-ticket-checkin');
+    checkinEl.innerText = booking.checked_in ? '✓ เช็คอินขึ้นรถแล้ว' : 'ยังไม่เช็คอิน';
+    checkinEl.className = booking.checked_in ? 'text-[11px] font-bold text-green-600' : 'text-[11px] font-bold text-gray-400';
+
+    const qrBox = document.getElementById('bus-ticket-qr');
+    qrBox.innerHTML = '';
+    new QRCode(qrBox, {
+        text: JSON.stringify({ bookingId: booking.id, sid: booking.student_id }),
+        width: 140,
+        height: 140
+    });
+
+    document.getElementById('bus-ticket-modal').classList.remove('hidden');
+}
+
 async function showMyBusTicket() {
     if (!myBusBooking) {
         const { data } = await _supabase.from('bus_bookings').select('*').eq('student_id', userData.student_id).maybeSingle();
         myBusBooking = data;
     }
     if (!myBusBooking) return showAlert('ยังไม่ได้จอง', 'คุณยังไม่มีที่นั่งรถบัส', 'warning');
-
-    document.getElementById('bus-ticket-name').innerText = myBusBooking.name;
-    document.getElementById('bus-ticket-id').innerText = 'รหัส: ' + myBusBooking.student_id;
-    document.getElementById('bus-ticket-floor').innerText = 'ชั้น ' + myBusBooking.floor;
-    document.getElementById('bus-ticket-seat').innerText = myBusBooking.seat_label;
-    document.getElementById('bus-ticket-checkin').innerText = myBusBooking.checked_in ? '✓ เช็คอินขึ้นรถแล้ว' : 'ยังไม่เช็คอิน';
-    document.getElementById('bus-ticket-checkin').className = myBusBooking.checked_in
-        ? 'text-[11px] font-bold text-green-600' : 'text-[11px] font-bold text-gray-400';
-
-    const qrBox = document.getElementById('bus-ticket-qr');
-    qrBox.innerHTML = '';
-    new QRCode(qrBox, {
-        text: JSON.stringify({ bookingId: myBusBooking.id, sid: myBusBooking.student_id }),
-        width: 160,
-        height: 160
-    });
-
-    document.getElementById('bus-ticket-modal').classList.remove('hidden');
+    renderTicketModal(myBusBooking);
 }
 
 function closeBusTicket() {
