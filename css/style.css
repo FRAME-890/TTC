@@ -34,3 +34,12 @@
 
         .menu-card { transition: all 0.3s ease; }
         .menu-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .tv-h {
+        width: 55px;
+        height: 8px;
+        border-radius: 99px;
+        background: #a78bfa;
+        box-shadow: 0 0 10px rgba(167, 139, 250, 0.6);
+        z-index: 60;
+        pointer-events: auto;
+}
