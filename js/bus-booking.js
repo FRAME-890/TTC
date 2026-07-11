@@ -79,12 +79,22 @@ function renderBusMap() {
             }
 
             if (cell.type === 'driver') {
-                outer.className = 'aspect-square flex items-center justify-center bg-slate-700 text-white rounded-xl text-[9px] font-bold';
+                outer.className = 'aspect-square flex items-center justify-center bg-slate-700 text-white rounded-xl text-lg';
                 outer.innerHTML = '<i class="fa-solid fa-steering-wheel"></i>';
+                outer.title = 'ที่นั่งคนขับ';
                 container.appendChild(outer);
                 continue;
             }
 
+            if (cell.type === 'stairs') {
+                outer.className = 'aspect-square flex items-center justify-center bg-slate-400 text-white rounded-xl text-lg';
+                outer.innerHTML = '🪜';
+                outer.title = 'บันได';
+                container.appendChild(outer);
+                continue;
+            }
+
+            // ที่นั่งปกติ
             const booking = busBookings.find(b => b.floor === currentBusFloor && b.seat_key === key);
             const isMine = booking && String(booking.student_id) === String(userData.student_id);
             const isSelected = selectedBusSeat && selectedBusSeat.floor === currentBusFloor && selectedBusSeat.key === key;
@@ -119,15 +129,25 @@ function renderBusObjects() {
     if (!busConfig) return;
 
     const objects = (currentBusFloor === 1 ? busConfig.floor1_objects : busConfig.floor2_objects) || [];
-    const classMap = { window: 'win-v', door: 'door-v', tv: 'tv-v', stairs: 'stairs-v' };
-    const labelMap = { window: 'หน้าต่าง', door: 'ประตู', tv: 'ทีวี', stairs: 'บันได' };
+    const wallClassMap = { window: 'win-v', door: 'door-v' };
+    const labelMap = { window: 'หน้าต่าง', door: 'ประตู', tv: 'ทีวี' };
 
     objects.forEach(obj => {
         const w = document.createElement('div');
-        w.className = `wall-v ${classMap[obj.type] || ''}`;
-        w.style.top = obj.top + '%';
-        w.style[obj.side] = '-4px';
-        w.style.height = '60px';
+        if (obj.type === 'tv') {
+            // ทีวี: เส้นแนวนอน วางได้ทุกจุดในผัง (กำหนดด้วย top% + left%)
+            w.className = 'tv-h';
+            w.style.position = 'absolute';
+            w.style.top = obj.top + '%';
+            w.style.left = obj.left + '%';
+            w.style.transform = 'translate(-50%, -50%)';
+        } else {
+            // หน้าต่าง/ประตู: ติดผนัง ซ้าย/ขวา ตามเดิม
+            w.className = `wall-v ${wallClassMap[obj.type] || ''}`;
+            w.style.top = obj.top + '%';
+            w.style[obj.side] = '-4px';
+            w.style.height = '60px';
+        }
         w.title = labelMap[obj.type] || obj.type;
         container.appendChild(w);
     });
@@ -162,7 +182,7 @@ async function confirmBusBooking() {
     showMyBusTicket();
 }
 
-// ---- BOARDING PASS TICKET ----
+// ---- BOARDING PASS TICKET (แนวยาว) ----
 // ใช้ร่วมกัน 2 ที่: นักเรียนดูตั๋วตัวเอง (showMyBusTicket) และแอดมินดูตั๋วของทุกคน (viewBusTicketAdmin ใน bus-admin.js)
 function renderTicketModal(booking) {
     const bookedDate = new Date(booking.booked_at);
@@ -182,8 +202,8 @@ function renderTicketModal(booking) {
     qrBox.innerHTML = '';
     new QRCode(qrBox, {
         text: JSON.stringify({ bookingId: booking.id, sid: booking.student_id }),
-        width: 140,
-        height: 140
+        width: 130,
+        height: 130
     });
 
     document.getElementById('bus-ticket-modal').classList.remove('hidden');
