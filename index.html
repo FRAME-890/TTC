@@ -571,51 +571,56 @@
             </div>
         </div>
     </div>
-                    <div id="bus-ticket-modal" class="hidden fixed inset-0 z-[600] bg-black/70 backdrop-blur-xl flex items-center justify-center p-4">
-    <div class="max-w-[300px] w-full">
-        <div class="bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-pop border-2 border-slate-100">
-            <div class="bg-sky-500 text-white px-6 py-5 text-center">
-                <i class="fa-solid fa-bus text-2xl opacity-90 mb-1"></i>
-                <p class="text-[10px] tracking-[0.3em] opacity-90 font-bold">BOARDING PASS</p>
-                <p class="text-sm font-bold mt-0.5">ตั๋วรถบัสทัศนศึกษา</p>
-            </div>
+<div id="bus-ticket-modal" class="hidden fixed inset-0 z-[600] bg-black/70 backdrop-blur-xl flex items-center justify-center p-4">
+    <div class="max-w-lg w-full">
+        <div class="bg-white rounded-[1.75rem] shadow-2xl overflow-hidden animate-pop border-2 border-slate-100 flex">
 
-            <div class="p-6 text-center border-b-2 border-dashed border-slate-200">
-                <p class="text-[9px] text-gray-400 uppercase tracking-wider mb-1">ที่นั่ง</p>
-                <p id="bus-ticket-seat" class="text-5xl font-bold text-[#00b272] leading-none">--</p>
-                <p id="bus-ticket-floor" class="text-xs font-bold text-slate-400 mt-2">--</p>
-            </div>
-
-            <div class="p-6 space-y-4 text-left">
-                <div>
-                    <p class="text-[9px] text-gray-400 uppercase tracking-wider">ชื่อผู้โดยสาร</p>
-                    <p id="bus-ticket-name" class="text-base font-bold text-slate-800">--</p>
+            <!-- ฝั่งซ้าย: รายละเอียดตั๋ว -->
+            <div class="flex-1 min-w-0">
+                <div class="bg-sky-500 text-white px-5 py-3 flex items-center justify-between">
+                    <div>
+                        <p class="text-[9px] tracking-[0.3em] opacity-90 font-bold">BOARDING PASS</p>
+                        <p class="text-sm font-bold">ตั๋วรถบัสทัศนศึกษา</p>
+                    </div>
+                    <i class="fa-solid fa-bus text-xl opacity-80"></i>
                 </div>
-                <div>
-                    <p class="text-[9px] text-gray-400 uppercase tracking-wider">เลขประจำตัว</p>
-                    <p id="bus-ticket-id" class="text-sm font-bold text-slate-700">--</p>
-                </div>
-                <div class="flex justify-between gap-4">
+                <div class="p-5 grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <p class="text-[9px] text-gray-400 uppercase tracking-wider">ชื่อผู้โดยสาร</p>
+                        <p id="bus-ticket-name" class="text-base font-bold text-slate-800 truncate">--</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-gray-400 uppercase tracking-wider">เลขประจำตัว</p>
+                        <p id="bus-ticket-id" class="text-sm font-bold text-slate-700">--</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-gray-400 uppercase tracking-wider">ชั้น</p>
+                        <p id="bus-ticket-floor" class="text-sm font-bold text-slate-700">--</p>
+                    </div>
                     <div>
                         <p class="text-[9px] text-gray-400 uppercase tracking-wider">วันที่จอง</p>
                         <p id="bus-ticket-date" class="text-sm font-bold text-slate-700">--</p>
                     </div>
-                    <div class="text-right">
+                    <div>
                         <p class="text-[9px] text-gray-400 uppercase tracking-wider">เวลาที่จอง</p>
                         <p id="bus-ticket-time" class="text-sm font-bold text-slate-700">--</p>
                     </div>
                 </div>
             </div>
 
-            <div class="relative">
-                <div class="absolute -left-3 -top-3 w-6 h-6 bg-[#f8fafc] rounded-full"></div>
-                <div class="absolute -right-3 -top-3 w-6 h-6 bg-[#f8fafc] rounded-full"></div>
-                <div class="border-t-2 border-dashed border-slate-200 mx-6"></div>
+            <!-- เส้นปรุฉีก แนวตั้ง -->
+            <div class="relative w-0">
+                <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 bg-[#f8fafc] rounded-full"></div>
+                <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 w-6 h-6 bg-[#f8fafc] rounded-full"></div>
+                <div class="h-full border-l-2 border-dashed border-slate-200"></div>
             </div>
 
-            <div class="p-6 flex flex-col items-center gap-2 bg-slate-50">
-                <div id="bus-ticket-qr" class="flex justify-center"></div>
-                <p id="bus-ticket-checkin" class="text-[11px] font-bold text-gray-400">--</p>
+            <!-- ฝั่งขวา: ก้านฉีก ที่นั่ง + QR -->
+            <div class="w-[150px] shrink-0 bg-slate-50 flex flex-col items-center justify-center p-4 gap-2 text-center">
+                <p class="text-[9px] text-gray-400 uppercase tracking-wider">ที่นั่ง</p>
+                <p id="bus-ticket-seat" class="text-3xl font-bold text-[#00b272] leading-none">--</p>
+                <div id="bus-ticket-qr" class="flex justify-center my-1"></div>
+                <p id="bus-ticket-checkin" class="text-[10px] font-bold text-gray-400 leading-tight">--</p>
             </div>
         </div>
         <button onclick="closeBusTicket()" class="w-full mt-4 py-2 text-white font-bold text-[11px] uppercase">ปิดหน้าต่าง</button>
