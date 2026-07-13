@@ -332,7 +332,13 @@ function printAllBusTickets() {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
         <style>
             @page { size: A4; margin: 10mm; }
-            * { box-sizing: border-box; font-family: 'Kanit', 'Sarabun', sans-serif; }
+            * {
+                box-sizing: border-box;
+                font-family: 'Kanit', 'Sarabun', sans-serif;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                color-adjust: exact;
+            }
             body { margin: 0; }
             .print-page {
                 display: grid;
