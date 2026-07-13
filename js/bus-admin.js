@@ -293,17 +293,19 @@ function printAllBusTickets() {
 
         return `
             <div class="ticket-cell">
-                <div class="ticket-left">
-                    <p class="tk-brand">BOARDING PASS</p>
-                    <p class="tk-name">${b.name}</p>
-                    <div class="tk-row"><span>รหัส ${b.student_id}</span><span>ชั้น ${b.floor}</span></div>
-                    <div class="tk-row"><span>${dateStr}</span><span>${timeStr}</span></div>
-                </div>
-                <div class="tk-divider"></div>
-                <div class="ticket-right">
-                    <p class="tk-seat-label">ที่นั่ง</p>
-                    <p class="tk-seat">${b.seat_label}</p>
-                    <img src="${qrDataUrl}" class="tk-qr">
+                <div class="tk-header"><i class="fa-solid fa-bus"></i> BOARDING PASS</div>
+                <div class="tk-body">
+                    <div class="ticket-left">
+                        <p class="tk-name">${b.name}</p>
+                        <div class="tk-row"><span>รหัส ${b.student_id}</span><span>ชั้น ${b.floor}</span></div>
+                        <div class="tk-row"><span>${dateStr}</span><span>${timeStr}</span></div>
+                    </div>
+                    <div class="tk-divider"></div>
+                    <div class="ticket-right">
+                        <p class="tk-seat-label">ที่นั่ง</p>
+                        <p class="tk-seat">${b.seat_label}</p>
+                        <img src="${qrDataUrl}" class="tk-qr">
+                    </div>
                 </div>
             </div>
         `;
@@ -327,6 +329,7 @@ function printAllBusTickets() {
         <head>
         <meta charset="UTF-8">
         <title>พิมพ์ตั๋วรถบัสทั้งหมด</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
         <style>
             @page { size: A4; margin: 10mm; }
             * { box-sizing: border-box; font-family: 'Kanit', 'Sarabun', sans-serif; }
@@ -343,25 +346,38 @@ function printAllBusTickets() {
             .print-page:last-child { page-break-after: auto; }
             .ticket-cell {
                 border: 1px dashed #94a3b8;
-                border-radius: 4mm;
+                border-radius: 3mm;
                 display: flex;
+                flex-direction: column;
                 overflow: hidden;
                 background: white;
             }
-            .ticket-left { flex: 1; padding: 3mm; display: flex; flex-direction: column; justify-content: center; gap: 1.5mm; min-width: 0; }
-            .tk-brand { font-size: 7pt; letter-spacing: 1px; color: #0ea5e9; font-weight: bold; margin: 0; }
-            .tk-name { font-size: 11pt; font-weight: bold; color: #1e293b; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-            .tk-row { display: flex; justify-content: space-between; font-size: 8pt; color: #475569; }
+            .tk-header {
+                background: #0ea5e9;
+                color: white;
+                font-size: 7pt;
+                font-weight: bold;
+                letter-spacing: 1px;
+                padding: 1.5mm 3mm;
+                display: flex;
+                align-items: center;
+                gap: 2mm;
+                flex-shrink: 0;
+            }
+            .tk-body { flex: 1; display: flex; min-height: 0; }
+            .ticket-left { flex: 1; padding: 2mm 3mm; display: flex; flex-direction: column; justify-content: center; gap: 1.5mm; min-width: 0; }
+            .tk-name { font-size: 10pt; font-weight: bold; color: #1e293b; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .tk-row { display: flex; justify-content: space-between; font-size: 7.5pt; color: #475569; }
             .tk-divider { border-left: 1px dashed #cbd5e1; }
-            .ticket-right { width: 30mm; flex-shrink: 0; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2mm; gap: 1mm; }
+            .ticket-right { width: 28mm; flex-shrink: 0; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2mm; gap: 1mm; }
             .tk-seat-label { font-size: 6pt; color: #94a3b8; margin: 0; text-transform: uppercase; }
-            .tk-seat { font-size: 14pt; font-weight: bold; color: #00b272; margin: 0; }
-            .tk-qr { width: 18mm; height: 18mm; }
+            .tk-seat { font-size: 13pt; font-weight: bold; color: #00b272; margin: 0; }
+            .tk-qr { width: 16mm; height: 16mm; }
         </style>
         </head>
         <body>
             ${pagesHTML}
-            <script>window.onload = () => { window.print(); };<\/script>
+            <script>window.onload = () => { setTimeout(() => window.print(), 400); };<\/script>
         </body>
         </html>
     `);
