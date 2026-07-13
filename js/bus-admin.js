@@ -244,6 +244,130 @@ function removeBusBookingAdmin(id) {
     });
 }
 
+// ---- ปริ้นตั๋วทั้งหมด (ปรับจำนวนแถว/คอลัมน์ได้เอง) ----
+function openBusPrintModal() {
+    if (!busBookings || busBookings.length === 0) {
+        return showAlert('ไม่มีข้อมูล', 'ยังไม่มีนักเรียนคนไหนจองที่นั่งรถบัส', 'warning');
+    }
+    document.getElementById('bus-print-count-info').innerText = `ทั้งหมด ${busBookings.length} คน`;
+    updateBusPrintPageEstimate();
+    document.getElementById('bus-print-modal').classList.remove('hidden');
+}
+
+function updateBusPrintPageEstimate() {
+    const rows = parseInt(document.getElementById('bus-print-rows').value) || 1;
+    const cols = parseInt(document.getElementById('bus-print-cols').value) || 1;
+    const perPage = rows * cols;
+    const totalPages = Math.ceil((busBookings ? busBookings.length : 0) / perPage);
+    document.getElementById('bus-print-estimate').innerText = `${rows} แถว x ${cols} คอลัมน์ = ${perPage} ใบ/แผ่น (ประมาณ ${totalPages} แผ่น)`;
+}
+
+function printAllBusTickets() {
+    let rows = parseInt(document.getElementById('bus-print-rows').value) || 5;
+    let cols = parseInt(document.getElementById('bus-print-cols').value) || 2;
+    rows = Math.min(Math.max(rows, 1), 10);
+    cols = Math.min(Math.max(cols, 1), 6);
+
+    const sorted = busBookings.slice().sort((a, b) => a.floor - b.floor || String(a.seat_label).localeCompare(String(b.seat_label)));
+
+    // สร้าง QR code ของทุกใบแบบซ่อนไว้ก่อน แล้วแปลงเป็นรูปภาพ (data URL)
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'fixed';
+    tempContainer.style.left = '-9999px';
+    document.body.appendChild(tempContainer);
+
+    const ticketCells = sorted.map(b => {
+        const qrDiv = document.createElement('div');
+        tempContainer.appendChild(qrDiv);
+        new QRCode(qrDiv, {
+            text: JSON.stringify({ bookingId: b.id, sid: b.student_id }),
+            width: 90,
+            height: 90
+        });
+        const canvas = qrDiv.querySelector('canvas');
+        const qrDataUrl = canvas ? canvas.toDataURL('image/png') : '';
+
+        const bookedDate = new Date(b.booked_at);
+        const dateStr = bookedDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+        const timeStr = bookedDate.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+        return `
+            <div class="ticket-cell">
+                <div class="ticket-left">
+                    <p class="tk-brand">BOARDING PASS</p>
+                    <p class="tk-name">${b.name}</p>
+                    <div class="tk-row"><span>รหัส ${b.student_id}</span><span>ชั้น ${b.floor}</span></div>
+                    <div class="tk-row"><span>${dateStr}</span><span>${timeStr}</span></div>
+                </div>
+                <div class="tk-divider"></div>
+                <div class="ticket-right">
+                    <p class="tk-seat-label">ที่นั่ง</p>
+                    <p class="tk-seat">${b.seat_label}</p>
+                    <img src="${qrDataUrl}" class="tk-qr">
+                </div>
+            </div>
+        `;
+    });
+
+    document.body.removeChild(tempContainer);
+
+    // แบ่งเป็นหน้าๆ ตามจำนวนแถว x คอลัมน์ที่ตั้งไว้
+    const perPage = rows * cols;
+    let pagesHTML = '';
+    for (let i = 0; i < ticketCells.length; i += perPage) {
+        pagesHTML += `<div class="print-page">${ticketCells.slice(i, i + perPage).join('')}</div>`;
+    }
+
+    document.getElementById('bus-print-modal').classList.add('hidden');
+
+    const printWin = window.open('', '_blank');
+    printWin.document.write(`
+        <!DOCTYPE html>
+        <html lang="th">
+        <head>
+        <meta charset="UTF-8">
+        <title>พิมพ์ตั๋วรถบัสทั้งหมด</title>
+        <style>
+            @page { size: A4; margin: 10mm; }
+            * { box-sizing: border-box; font-family: 'Kanit', 'Sarabun', sans-serif; }
+            body { margin: 0; }
+            .print-page {
+                display: grid;
+                grid-template-columns: repeat(${cols}, 1fr);
+                grid-template-rows: repeat(${rows}, 1fr);
+                gap: 4mm;
+                width: 190mm;
+                height: 277mm;
+                page-break-after: always;
+            }
+            .print-page:last-child { page-break-after: auto; }
+            .ticket-cell {
+                border: 1px dashed #94a3b8;
+                border-radius: 4mm;
+                display: flex;
+                overflow: hidden;
+                background: white;
+            }
+            .ticket-left { flex: 1; padding: 3mm; display: flex; flex-direction: column; justify-content: center; gap: 1.5mm; min-width: 0; }
+            .tk-brand { font-size: 7pt; letter-spacing: 1px; color: #0ea5e9; font-weight: bold; margin: 0; }
+            .tk-name { font-size: 11pt; font-weight: bold; color: #1e293b; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .tk-row { display: flex; justify-content: space-between; font-size: 8pt; color: #475569; }
+            .tk-divider { border-left: 1px dashed #cbd5e1; }
+            .ticket-right { width: 30mm; flex-shrink: 0; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2mm; gap: 1mm; }
+            .tk-seat-label { font-size: 6pt; color: #94a3b8; margin: 0; text-transform: uppercase; }
+            .tk-seat { font-size: 14pt; font-weight: bold; color: #00b272; margin: 0; }
+            .tk-qr { width: 18mm; height: 18mm; }
+        </style>
+        </head>
+        <body>
+            ${pagesHTML}
+            <script>window.onload = () => { window.print(); };<\/script>
+        </body>
+        </html>
+    `);
+    printWin.document.close();
+}
+
 // ---- สแกน QR (ไม่เช็คอินอัตโนมัติ - โชว์ข้อมูลแล้วให้แอดมินติ๊กยืนยันเอง) ----
 function startBusScanner() {
     const el = document.getElementById('bus-qr-reader');
