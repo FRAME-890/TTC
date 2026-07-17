@@ -87,4 +87,7 @@ function showAlert(title, message, type = 'success', onConfirm = null) {
                 _supabase.removeChannel(voteSubscription);
                 voteSubscription = null;
             }
+           if (id !== 'bus-page' && id !== 'admin-panel' && typeof unsubscribeBusRealtime === 'function') {
+           unsubscribeBusRealtime();
+           }
         }
