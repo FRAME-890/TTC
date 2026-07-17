@@ -3,6 +3,7 @@ let busBookings = [];
 let currentBusFloor = 1;
 let selectedBusSeat = null;   // { floor, key, label }
 let myBusBooking = null;
+let busSubscription = null;
 
 const BUS_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -15,6 +16,39 @@ async function loadBusData() {
 
     myBusBooking = busBookings.find(b => String(b.student_id) === String(userData.student_id)) || null;
     if (document.getElementById('bus-seat-map')) renderBusUI();
+
+    subscribeBusRealtime();
+}
+
+// ---- REALTIME: อัปเดตอัตโนมัติเมื่อมีคนจอง/ยกเลิก/เช็คอินที่นั่งรถบัส ----
+function subscribeBusRealtime() {
+    if (busSubscription) return; // สมัครรับข่าวสารซ้ำอยู่แล้ว ไม่ต้องสมัครซ้ำ
+    busSubscription = _supabase
+        .channel('bus_bookings_realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bus_bookings' }, handleBusRealtimeChange)
+        .subscribe();
+}
+
+function unsubscribeBusRealtime() {
+    if (busSubscription) {
+        _supabase.removeChannel(busSubscription);
+        busSubscription = null;
+    }
+}
+
+async function handleBusRealtimeChange() {
+    const { data: bookings } = await _supabase.from('bus_bookings').select('*');
+    busBookings = bookings || [];
+    myBusBooking = busBookings.find(b => String(b.student_id) === String(userData.student_id)) || null;
+
+    // อัปเดตผังที่นั่งฝั่งนักเรียน (ถ้ากำลังเปิดหน้านี้อยู่)
+    if (document.getElementById('bus-seat-map')) renderBusUI();
+
+    // อัปเดตรายชื่อผู้จองฝั่งแอดมิน (ถ้ากำลังเปิดแท็บนี้อยู่)
+    const bookingsTab = document.getElementById('bus-tab-bookings');
+    if (bookingsTab && !bookingsTab.classList.contains('hidden') && typeof renderBusAdminBookingsList === 'function') {
+        renderBusAdminBookingsList();
+    }
 }
 
 function switchBusFloor(floor) {
