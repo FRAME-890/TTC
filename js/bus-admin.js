@@ -1,3 +1,4 @@
+
 let busAdminFloor = 1;
 let busQrScanner = null;
 let currentScanBookingId = null;
@@ -316,8 +317,6 @@ function printAllBusTickets() {
                         </div>
                     </div>
                     <div class="tk-divider-wrap">
-                        <div class="tk-notch tk-notch-top"></div>
-                        <div class="tk-notch tk-notch-bottom"></div>
                         <div class="tk-divider"></div>
                     </div>
                     <div class="ticket-right">
