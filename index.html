@@ -110,11 +110,13 @@
     </div>
 
     <div class="flex flex-col lg:flex-row gap-6 justify-center items-start">
-        <div class="glass p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] relative shadow-xl border-white w-full lg:flex-1 text-center">
-            <div id="bus-wall-container" class="absolute inset-0 pointer-events-none"></div>
+        <div class="glass p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-xl border-white w-full lg:flex-1 text-center">
             <div class="text-center mb-8"><p class="text-[8px] text-gray-300 tracking-[0.6em] font-bold uppercase">หน้ารถ / FRONT</p></div>
             <div class="overflow-x-auto pb-4 custom-scrollbar">
-                <div id="bus-seat-map" class="grid gap-2 mx-auto min-w-fit px-2"></div>
+                <div class="relative mx-auto" style="width: fit-content;">
+                    <div id="bus-wall-container" class="absolute inset-0 pointer-events-none"></div>
+                    <div id="bus-seat-map" class="grid gap-2 min-w-fit px-2"></div>
+                </div>
             </div>
         </div>
         <div class="w-full lg:w-64 text-center">
@@ -334,11 +336,13 @@
 
             <div id="bus-tab-layout">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 bg-white p-6 rounded-3xl border shadow-sm relative">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-3xl border shadow-sm">
                         <p class="text-xs text-slate-400 font-bold mb-4">คลิกที่ช่องเพื่อแก้ไข: เปลี่ยนชื่อที่นั่ง / ลบที่นั่ง (ทำเป็นทางเดิน) / ตั้งเป็นที่นั่งคนขับ</p>
-                        <div id="bus-admin-wall-container" class="absolute inset-0 pointer-events-none"></div>
                         <div class="overflow-x-auto pb-2 custom-scrollbar">
-                            <div id="bus-admin-seat-map" class="grid gap-1.5 mx-auto min-w-fit"></div>
+                            <div class="relative mx-auto" style="width: fit-content;">
+                                <div id="bus-admin-wall-container" class="absolute inset-0 pointer-events-none"></div>
+                                <div id="bus-admin-seat-map" class="grid gap-1.5 mx-auto min-w-fit"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="space-y-4">
@@ -358,7 +362,6 @@
                     </div>
                 </div>
             </div>
-
             <div id="bus-tab-time" class="hidden">
                 <div class="bg-white p-6 rounded-3xl border shadow-sm max-w-md space-y-4">
                     <p class="text-sm font-bold text-slate-700 border-b pb-2"><i class="fa-solid fa-clock text-amber-500 mr-1"></i> ตั้งเวลาเปิดให้จองที่นั่ง</p>
