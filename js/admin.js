@@ -1,6 +1,7 @@
 async function openAdmin() {
             if(userData.role !== 'admin') return;
             document.getElementById('admin-panel').classList.remove('hidden');
+            history.pushState({ page: 'admin-panel' }, '', '#admin-panel');
             
             const { data: config } = await _supabase.from('room').select('*').eq('id', 1).maybeSingle();
             if(config) {
