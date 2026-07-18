@@ -293,14 +293,33 @@ function printAllBusTickets() {
 
         return `
             <div class="ticket-cell">
-                <div class="tk-header"><i class="fa-solid fa-bus"></i> BOARDING PASS</div>
+                <div class="tk-header">
+                    <div>
+                        <p class="tk-brand">BUSDING PASS</p>
+                        <p class="tk-subtitle">ตั๋วรถบัสทัศนศึกษา</p>
+                    </div>
+                    <i class="fa-solid fa-bus"></i>
+                </div>
                 <div class="tk-body">
                     <div class="ticket-left">
-                        <p class="tk-name">${b.name}</p>
-                        <div class="tk-row"><span>รหัส ${b.student_id}</span><span>ชั้น ${b.floor}</span></div>
-                        <div class="tk-row"><span>${dateStr}</span><span>${timeStr}</span></div>
+                        <div class="tk-field">
+                            <p class="tk-label">ชื่อผู้โดยสาร</p>
+                            <p class="tk-value tk-name">${b.name}</p>
+                        </div>
+                        <div class="tk-field-row">
+                            <div class="tk-field"><p class="tk-label">เลขประจำตัว</p><p class="tk-value">${b.student_id}</p></div>
+                            <div class="tk-field"><p class="tk-label">ชั้น</p><p class="tk-value">${b.floor}</p></div>
+                        </div>
+                        <div class="tk-field-row">
+                            <div class="tk-field"><p class="tk-label">วันที่จอง</p><p class="tk-value">${dateStr}</p></div>
+                            <div class="tk-field"><p class="tk-label">เวลาที่จอง</p><p class="tk-value">${timeStr}</p></div>
+                        </div>
                     </div>
-                    <div class="tk-divider"></div>
+                    <div class="tk-divider-wrap">
+                        <div class="tk-notch tk-notch-top"></div>
+                        <div class="tk-notch tk-notch-bottom"></div>
+                        <div class="tk-divider"></div>
+                    </div>
                     <div class="ticket-right">
                         <p class="tk-seat-label">ที่นั่ง</p>
                         <p class="tk-seat">${b.seat_label}</p>
@@ -361,24 +380,32 @@ function printAllBusTickets() {
             .tk-header {
                 background: #0ea5e9;
                 color: white;
-                font-size: 7pt;
-                font-weight: bold;
-                letter-spacing: 1px;
-                padding: 1.5mm 3mm;
+                padding: 2mm 3mm;
                 display: flex;
-                align-items: center;
-                gap: 2mm;
+                align-items: flex-start;
+                justify-content: space-between;
                 flex-shrink: 0;
             }
+            .tk-brand { font-size: 6.5pt; letter-spacing: 1.5px; font-weight: bold; margin: 0; opacity: .9; }
+            .tk-subtitle { font-size: 8pt; font-weight: bold; margin: 0.3mm 0 0 0; }
+            .tk-header i { font-size: 10pt; opacity: .85; margin-top: 0.5mm; }
             .tk-body { flex: 1; display: flex; min-height: 0; }
-            .ticket-left { flex: 1; padding: 2mm 3mm; display: flex; flex-direction: column; justify-content: center; gap: 1.5mm; min-width: 0; }
-            .tk-name { font-size: 10pt; font-weight: bold; color: #1e293b; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-            .tk-row { display: flex; justify-content: space-between; font-size: 7.5pt; color: #475569; }
-            .tk-divider { border-left: 1px dashed #cbd5e1; }
-            .ticket-right { width: 28mm; flex-shrink: 0; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2mm; gap: 1mm; }
-            .tk-seat-label { font-size: 6pt; color: #94a3b8; margin: 0; text-transform: uppercase; }
-            .tk-seat { font-size: 13pt; font-weight: bold; color: #00b272; margin: 0; }
-            .tk-qr { width: 16mm; height: 16mm; }
+            .ticket-left { flex: 1; padding: 2mm 3mm; display: flex; flex-direction: column; justify-content: center; gap: 1.8mm; min-width: 0; }
+            .tk-field-row { display: flex; gap: 3mm; }
+            .tk-field { flex: 1; min-width: 0; }
+            .tk-label { font-size: 5.5pt; color: #94a3b8; text-transform: uppercase; letter-spacing: .3px; margin: 0; }
+            .tk-value { font-size: 7.5pt; font-weight: bold; color: #334155; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .tk-name { font-size: 9pt; }
+            .tk-divider-wrap { position: relative; width: 0; flex-shrink: 0; }
+            .tk-divider { height: 100%; border-left: 1px dashed #cbd5e1; }
+            .tk-notch { position: absolute; width: 4mm; height: 4mm; background: white; border-radius: 50%; left: 50%; transform: translateX(-50%); z-index: 2; }
+            .tk-notch-top { top: -2mm; }
+            .tk-notch-bottom { bottom: -2mm; }
+            .ticket-right { width: 26mm; flex-shrink: 0; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2mm; gap: 1mm; }
+            .tk-seat-label { font-size: 5.5pt; color: #94a3b8; margin: 0; text-transform: uppercase; }
+            .tk-seat { font-size: 12pt; font-weight: bold; color: #00b272; margin: 0; }
+            .tk-qr { width: 14mm; height: 14mm; }
+            .tk-checkin { font-size: 5.5pt; color: #94a3b8; font-weight: bold; margin: 0; text-align: center; }
         </style>
         </head>
         <body>
