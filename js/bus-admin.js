@@ -1,3 +1,4 @@
+
 let busAdminFloor = 1;
 let busQrScanner = null;
 let currentScanBookingId = null;
@@ -44,9 +45,7 @@ function renderBusAdminLayout() {
     const container = document.getElementById('bus-admin-seat-map');
     container.innerHTML = '';
     container.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
-    const gridWidth = cols * 60;
-    container.style.width = gridWidth + 'px';
-    if (container.parentElement) container.parentElement.style.width = gridWidth + 'px';
+    container.style.maxWidth = (cols * 60) + 'px';
 
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
