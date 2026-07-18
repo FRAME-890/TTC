@@ -75,34 +75,19 @@ function showAlert(title, message, type = 'success', onConfirm = null) {
             document.getElementById('nav').classList.remove('hidden');
         }
 
-        function goToPage(id, isBackNavigation) {
+        function goToPage(id) {
     ['login-page', 'landing-page', 'main-app', 'bus-page', 'duty-page', 'homework-page', 'fund-page', 'vote-page', 'admin-panel'].forEach(p => {
-        if(document.getElementById(p)) document.getElementById(p).classList.add('hidden');
-    });
-    document.getElementById(id).classList.remove('hidden');
-    if(id === 'landing-page' && userData) {
-        document.getElementById('landing-name').innerText = userData.name;
-    }
-    if (id !== 'vote-page' && voteSubscription) {
-        _supabase.removeChannel(voteSubscription);
-        voteSubscription = null;
-    }
-    if (id !== 'bus-page' && id !== 'admin-panel' && typeof unsubscribeBusRealtime === 'function') {
-        unsubscribeBusRealtime();
-    }
-
-    // ---- ส่วนที่เพิ่มใหม่: บันทึกลงประวัติเบราว์เซอร์ ----
-    // isBackNavigation = true หมายถึงการเรียกนี้มาจากการกดปุ่มย้อนกลับเอง
-    // (มาจาก popstate ด้านล่าง) จึงไม่ต้อง pushState ซ้ำ ไม่งั้นจะวนลูป
-    if (!isBackNavigation) {
-        history.pushState({ page: id }, '', '#' + id);
-    }
-}
-
-// ---- ดักจับปุ่มย้อนกลับของอุปกรณ์/เบราว์เซอร์ ----
-window.addEventListener('popstate', (e) => {
-    const targetPage = (e.state && e.state.page) ? e.state.page : 'landing-page';
-    if (document.getElementById(targetPage)) {
-        goToPage(targetPage, true); // true = อย่า pushState ซ้ำ
-    }
-});
+                if(document.getElementById(p)) document.getElementById(p).classList.add('hidden');
+            });
+            document.getElementById(id).classList.remove('hidden');
+            if(id === 'landing-page' && userData) {
+                document.getElementById('landing-name').innerText = userData.name;
+            }
+            if (id !== 'vote-page' && voteSubscription) {
+                _supabase.removeChannel(voteSubscription);
+                voteSubscription = null;
+            }
+           if (id !== 'bus-page' && id !== 'admin-panel' && typeof unsubscribeBusRealtime === 'function') {
+           unsubscribeBusRealtime();
+           }
+        }
