@@ -1,45 +1,147 @@
-  body { font-family: 'Kanit', sans-serif; background-color: #f0f7f2; }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.5); }
-        
-        .seat { 
-            transition: all 0.2s ease; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-weight: bold; 
-            border-radius: 10px; 
-            font-size: 10px; 
-            text-align: center;
-            aspect-ratio: 1/1;
-            width: 100%;
-        }
-        .seat-vacant { background: white; border: 1px solid #e2e8f0; color: #94a3b8; }
-        .seat-occupied { background: #cbd5e1 !important; color: #94a3b8 !important; cursor: not-allowed; border: none; }
-        .seat-selected { background: #00b272 !important; color: white !important; transform: scale(1.05); box-shadow: 0 8px 20px rgba(0,178,114,0.3); z-index: 10; }
-        .seat-blocked { opacity: 0; pointer-events: none; } 
-        .seat-admin-blocked { background: #fee2e2 !important; border: 2px dashed #ef4444 !important; color: #ef4444 !important; }
-        
-        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+body {
+    font-family: 'Kanit', sans-serif;
+    background: linear-gradient(160deg, #eafff2 0%, #eef9ff 45%, #f3f0ff 100%);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
 
-        .wall-v { position: absolute; width: 8px; border-radius: 99px; z-index: 60; }
-        .win-v { background: #60a5fa; box-shadow: 0 0 10px rgba(96, 165, 250, 0.6); }
-        .door-v { background: #fb923c; box-shadow: 0 0 10px rgba(251, 146, 60, 0.6); }
+/* ----------------------------------------------------------
+   บับเบิลสีเบลอลอยอยู่หลังพื้นหลัง — ให้กระจกมีอะไรให้หักเหแสง
+   (position: fixed, ไม่บังการคลิกใดๆ, อยู่ชั้นล่างสุด)
+   ---------------------------------------------------------- */
+body::before,
+body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(70px);
+    z-index: -1;
+    pointer-events: none;
+}
+body::before {
+    width: 420px;
+    height: 420px;
+    top: -120px;
+    left: -100px;
+    background: radial-gradient(circle, rgba(0, 178, 114, 0.35), transparent 70%);
+}
+body::after {
+    width: 480px;
+    height: 480px;
+    bottom: -160px;
+    right: -120px;
+    background: radial-gradient(circle, rgba(96, 165, 250, 0.30), transparent 70%);
+}
 
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        .animate-pop { animation: fadeIn 0.2s ease-out; }
+/* ----------------------------------------------------------
+   .glass — หัวใจของ Liquid Glass
+   โปร่งใสมากขึ้น + blur/saturate แรงขึ้น + แสงสะท้อนขอบบน
+   ---------------------------------------------------------- */
+.glass {
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    box-shadow:
+        0 8px 32px rgba(31, 41, 55, 0.10),
+        0 1.5px 3px rgba(31, 41, 55, 0.06),
+        inset 0 1px 1px rgba(255, 255, 255, 0.9),
+        inset 0 -1px 1px rgba(255, 255, 255, 0.15);
+    position: relative;
+    isolation: isolate;
+}
 
-        .menu-card { transition: all 0.3s ease; }
-        .menu-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-        .tv-h {
-        width: 55px;
-        height: 8px;
-        border-radius: 99px;
-        background: #a78bfa;
-        box-shadow: 0 0 10px rgba(167, 139, 250, 0.6);
-        z-index: 60;
-        pointer-events: auto;
+/* แสงสะท้อนโค้งบนสุดของกระจก (specular highlight) */
+.glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 45%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ----------------------------------------------------------
+   ที่นั่ง — ปรับให้เข้าธีมกระจกด้วย (โปร่งใสขึ้น มีแสงตอนเลือก)
+   ---------------------------------------------------------- */
+.seat {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border-radius: 12px;
+    font-size: 10px;
+    text-align: center;
+    aspect-ratio: 1/1;
+    width: 100%;
+}
+.seat-vacant {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    color: #94a3b8;
+}
+.seat-occupied {
+    background: rgba(203, 213, 225, 0.75) !important;
+    color: #94a3b8 !important;
+    cursor: not-allowed;
+    border: none;
+}
+.seat-selected {
+    background: linear-gradient(160deg, #00d492, #00b272) !important;
+    color: white !important;
+    transform: scale(1.08);
+    box-shadow:
+        0 10px 24px rgba(0, 178, 114, 0.4),
+        inset 0 1px 1px rgba(255, 255, 255, 0.5);
+    z-index: 10;
+}
+.seat-blocked { opacity: 0; pointer-events: none; }
+.seat-admin-blocked {
+    background: rgba(254, 226, 226, 0.7) !important;
+    border: 2px dashed #ef4444 !important;
+    color: #ef4444 !important;
+    backdrop-filter: blur(6px);
+}
+
+/* ----------------------------------------------------------
+   scrollbar
+   ---------------------------------------------------------- */
+.custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: rgba(241, 241, 241, 0.5); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(203, 213, 225, 0.8); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ----------------------------------------------------------
+   จุดสังเกตในผัง (หน้าต่าง/ประตู/ทีวี)
+   ---------------------------------------------------------- */
+.wall-v { position: absolute; width: 8px; border-radius: 99px; z-index: 60; }
+.win-v { background: #60a5fa; box-shadow: 0 0 12px rgba(96, 165, 250, 0.7); }
+.door-v { background: #fb923c; box-shadow: 0 0 12px rgba(251, 146, 60, 0.7); }
+.tv-h {
+    width: 55px;
+    height: 8px;
+    border-radius: 99px;
+    background: #a78bfa;
+    box-shadow: 0 0 12px rgba(167, 139, 250, 0.7);
+    z-index: 60;
+    pointer-events: auto;
+}
+
+/* ----------------------------------------------------------
+   animation + การ์ดเมนู
+   ---------------------------------------------------------- */
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+.animate-pop { animation: fadeIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+.menu-card { transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
+.menu-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow:
+        0 16px 32px rgba(31, 41, 55, 0.12),
+        inset 0 1px 1px rgba(255, 255, 255, 0.9);
 }
