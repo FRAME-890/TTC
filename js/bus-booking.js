@@ -22,7 +22,7 @@ async function loadBusData() {
 
 // ---- REALTIME: อัปเดตอัตโนมัติเมื่อมีคนจอง/ยกเลิก/เช็คอินที่นั่งรถบัส ----
 function subscribeBusRealtime() {
-    if (busSubscription) return; // สมัครรับข่าวสารซ้ำอยู่แล้ว ไม่ต้องสมัครซ้ำ
+    if (busSubscription) return;
     busSubscription = _supabase
         .channel('bus_bookings_realtime')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'bus_bookings' }, handleBusRealtimeChange)
@@ -41,10 +41,8 @@ async function handleBusRealtimeChange() {
     busBookings = bookings || [];
     myBusBooking = busBookings.find(b => String(b.student_id) === String(userData.student_id)) || null;
 
-    // อัปเดตผังที่นั่งฝั่งนักเรียน (ถ้ากำลังเปิดหน้านี้อยู่)
     if (document.getElementById('bus-seat-map')) renderBusUI();
 
-    // อัปเดตรายชื่อผู้จองฝั่งแอดมิน (ถ้ากำลังเปิดแท็บนี้อยู่)
     const bookingsTab = document.getElementById('bus-tab-bookings');
     if (bookingsTab && !bookingsTab.classList.contains('hidden') && typeof renderBusAdminBookingsList === 'function') {
         renderBusAdminBookingsList();
@@ -130,7 +128,6 @@ function renderBusMap() {
                 continue;
             }
 
-            // ที่นั่งปกติ
             const booking = busBookings.find(b => b.floor === currentBusFloor && b.seat_key === key);
             const isMine = booking && String(booking.student_id) === String(userData.student_id);
             const isSelected = selectedBusSeat && selectedBusSeat.floor === currentBusFloor && selectedBusSeat.key === key;
@@ -171,14 +168,12 @@ function renderBusObjects() {
     objects.forEach(obj => {
         const w = document.createElement('div');
         if (obj.type === 'tv') {
-            // ทีวี: เส้นแนวนอน วางได้ทุกจุดในผัง (กำหนดด้วย top% + left%)
             w.className = 'tv-h';
             w.style.position = 'absolute';
             w.style.top = obj.top + '%';
             w.style.left = obj.left + '%';
             w.style.transform = 'translate(-50%, -50%)';
         } else {
-            // หน้าต่าง/ประตู: ติดผนัง ซ้าย/ขวา ตามเดิม
             w.className = `wall-v ${wallClassMap[obj.type] || ''}`;
             w.style.top = obj.top + '%';
             w.style[obj.side] = '-4px';
@@ -218,9 +213,29 @@ async function confirmBusBooking() {
     showMyBusTicket();
 }
 
-// ---- BOARDING PASS TICKET (แนวยาว) ----
-// ใช้ร่วมกัน 2 ที่: นักเรียนดูตั๋วตัวเอง (showMyBusTicket) และแอดมินดูตั๋วของทุกคน (viewBusTicketAdmin ใน bus-admin.js)
-function renderTicketModal(booking) {
+// ---- ยกเลิกการจองของตัวเอง ----
+function cancelMyBusBooking() {
+    if (!myBusBooking) return;
+
+    const warnText = myBusBooking.checked_in
+        ? `คุณเช็คอินขึ้นรถแล้ว ต้องการยกเลิกที่นั่ง ${myBusBooking.seat_label} จริงหรือไม่?`
+        : `ต้องการยกเลิกที่นั่ง ${myBusBooking.seat_label} ใช่หรือไม่? คุณจะสามารถกลับมาจองที่นั่งใหม่ได้อีกครั้ง`;
+
+    showAlert('ยืนยันการยกเลิก', warnText, 'confirm', async () => {
+        const { error } = await _supabase.from('bus_bookings').delete().eq('id', myBusBooking.id);
+        if (!error) {
+            closeBusTicket();
+            await loadBusData();
+            showAlert('สำเร็จ', 'ยกเลิกที่นั่งรถบัสเรียบร้อยแล้ว', 'success');
+        } else {
+            showAlert('ข้อผิดพลาด', 'ยกเลิกไม่สำเร็จ กรุณาลองใหม่', 'error');
+        }
+    });
+}
+
+// ---- BOARDING PASS TICKET ----
+// ใช้ร่วมกัน 2 ที่: นักเรียนดูตั๋วตัวเอง (แสดงปุ่มยกเลิกได้) และแอดมินดูตั๋วของทุกคน (ไม่แสดงปุ่มยกเลิก)
+function renderTicketModal(booking, allowCancel) {
     const bookedDate = new Date(booking.booked_at);
 
     document.getElementById('bus-ticket-name').innerText = booking.name;
@@ -242,6 +257,9 @@ function renderTicketModal(booking) {
         height: 100
     });
 
+    const cancelBtn = document.getElementById('bus-ticket-cancel-btn');
+    if (cancelBtn) cancelBtn.classList.toggle('hidden', !allowCancel);
+
     document.getElementById('bus-ticket-modal').classList.remove('hidden');
 }
 
@@ -251,7 +269,7 @@ async function showMyBusTicket() {
         myBusBooking = data;
     }
     if (!myBusBooking) return showAlert('ยังไม่ได้จอง', 'คุณยังไม่มีที่นั่งรถบัส', 'warning');
-    renderTicketModal(myBusBooking);
+    renderTicketModal(myBusBooking, true);
 }
 
 function closeBusTicket() {
