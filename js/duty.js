@@ -54,24 +54,29 @@ function renderDutyInterface() {
     const checklistBox = document.getElementById('duty-checklist-box');
     const gridSection = document.getElementById('duty-grid-section');
 
-    if (myReg) {
-        const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const todayIndex = new Date().getDay();
-        const currentDayNameEn = daysOfWeek[todayIndex];
+    // ---- ช่องเช็กเวรโชว์เสมอ ไม่ซ่อนทั้งกล่องอีกต่อไป ----
+    checklistBox.classList.remove('hidden');
 
-        if (myReg.day_name_en.toLowerCase() === currentDayNameEn) {
-            checklistBox.classList.remove('hidden');
-            document.getElementById('current-day-badge').innerText = `วัน${myReg.day_name_th || myReg.day_name_en}`;
-            renderDutyChecklist(myReg.day_name_en, myReg.day_name_th);
-        } else {
-            checklistBox.classList.add('hidden');
-        }
+    const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const todayIndex = new Date().getDay();
+    const currentDayNameEn = daysOfWeek[todayIndex];
 
-        gridSection.classList.remove('hidden');
+    if (myReg && myReg.day_name_en.toLowerCase() === currentDayNameEn) {
+        // ถึงวันเวรของเราแล้ว -> โชว์รายชื่อให้เช็กได้ตามปกติ
+        document.getElementById('current-day-badge').innerText = `วัน${myReg.day_name_th || myReg.day_name_en}`;
+        setDutyChecklistLocked(false);
+        renderDutyChecklist(myReg.day_name_en, myReg.day_name_th);
+    } else if (myReg) {
+        // ลงทะเบียนเวรไว้แล้ว แต่ยังไม่ถึงวัน -> โชว์กล่องแต่ล็อกไว้
+        document.getElementById('current-day-badge').innerText = `วัน${myReg.day_name_th || myReg.day_name_en}`;
+        setDutyChecklistLocked(true, `ยังไม่ถึงวัน${myReg.day_name_th || myReg.day_name_en} ไม่สามารถเช็กได้`);
     } else {
-        checklistBox.classList.add('hidden');
-        gridSection.classList.remove('hidden');
+        // ยังไม่ได้ลงทะเบียนเวรเลย -> โชว์กล่องพร้อมชวนให้ไปเลือกวัน
+        document.getElementById('current-day-badge').innerText = '---';
+        setDutyChecklistLocked(true, 'คุณยังไม่ได้ลงทะเบียนเวร กรุณาเลือกวันเวรของคุณด้านล่างก่อน');
     }
+
+    gridSection.classList.remove('hidden');
 
     dutiesConfig.forEach(day => {
         const currentDayEn = day.day_name_en.toLowerCase();
@@ -125,6 +130,27 @@ function renderDutyInterface() {
         `;
         grid.appendChild(card);
     });
+}
+
+// ---- แสดงสถานะ "ล็อก" ของช่องเช็กเวร (ยังไม่ถึงวัน / ยังไม่ได้ลงทะเบียน) ----
+function setDutyChecklistLocked(isLocked, message) {
+    const itemsContainer = document.getElementById('my-day-checklist-items');
+    const submitBtn = document.getElementById('duty-submit-btn');
+
+    if (isLocked) {
+        itemsContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center text-center py-8 gap-3">
+                <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <p class="text-xs font-bold text-slate-400 max-w-[240px]">${message}</p>
+            </div>
+        `;
+        if (submitBtn) submitBtn.classList.add('hidden');
+    } else {
+        if (submitBtn) submitBtn.classList.remove('hidden');
+        // renderDutyChecklist() ที่เรียกต่อจากนี้จะเติมรายชื่อลงใน itemsContainer เอง
+    }
 }
 
 // ---- สวิตช์ 3 ตัวเลือก: ทำแล้ว / ไม่ทำ / ลา ----
