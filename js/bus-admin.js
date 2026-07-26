@@ -232,7 +232,7 @@ function renderBusAdminBookingsList() {
 
 function viewBusTicketAdmin(id) {
     const booking = busBookings.find(b => b.id === id);
-    if (booking) renderTicketModal(booking);
+    if (booking) renderTicketModal(booking, false); // แอดมินดูตั๋วคนอื่น -> ไม่โชว์ปุ่มยกเลิก (ใช้ปุ่มลบในรายชื่อแทน)
 }
 
 function removeBusBookingAdmin(id) {
@@ -272,7 +272,6 @@ function printAllBusTickets() {
 
     const sorted = busBookings.slice().sort((a, b) => a.floor - b.floor || String(a.seat_label).localeCompare(String(b.seat_label)));
 
-    // สร้าง QR code ของทุกใบแบบซ่อนไว้ก่อน แล้วแปลงเป็นรูปภาพ (data URL)
     const tempContainer = document.createElement('div');
     tempContainer.style.position = 'fixed';
     tempContainer.style.left = '-9999px';
@@ -332,7 +331,6 @@ function printAllBusTickets() {
 
     document.body.removeChild(tempContainer);
 
-    // แบ่งเป็นหน้าๆ ตามจำนวนแถว x คอลัมน์ที่ตั้งไว้
     const perPage = rows * cols;
     let pagesHTML = '';
     for (let i = 0; i < ticketCells.length; i += perPage) {
@@ -398,14 +396,10 @@ function printAllBusTickets() {
             .tk-name { font-size: 9pt; }
             .tk-divider-wrap { position: relative; width: 0; flex-shrink: 0; }
             .tk-divider { height: 100%; border-left: 1px dashed #cbd5e1; }
-            .tk-notch { position: absolute; width: 4mm; height: 4mm; background: white; border-radius: 50%; left: 50%; transform: translateX(-50%); z-index: 2; }
-            .tk-notch-top { top: -2mm; }
-            .tk-notch-bottom { bottom: -2mm; }
             .ticket-right { width: 26mm; flex-shrink: 0; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2mm; gap: 1mm; }
             .tk-seat-label { font-size: 5.5pt; color: #94a3b8; margin: 0; text-transform: uppercase; }
             .tk-seat { font-size: 12pt; font-weight: bold; color: #00b272; margin: 0; }
             .tk-qr { width: 14mm; height: 14mm; }
-            .tk-checkin { font-size: 5.5pt; color: #94a3b8; font-weight: bold; margin: 0; text-align: center; }
         </style>
         </head>
         <body>
