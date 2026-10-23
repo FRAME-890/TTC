@@ -5,9 +5,7 @@ let currentScanBookingId = null;
 function switchBusAdminTab(tab) {
     ['layout', 'time', 'bookings', 'scan'].forEach(t => {
         document.getElementById(`bus-tab-${t}`).classList.toggle('hidden', t !== tab);
-        document.getElementById(`bus-tabbtn-${t}`).className = t === tab
-            ? 'px-4 py-2 rounded-xl text-xs font-bold bg-[#00b272] text-white transition'
-            : 'px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-500 transition';
+        document.getElementById(`bus-tabbtn-${t}`).className = t === tab ? 'tab on' : 'tab';
     });
 
     if (tab === 'layout') renderBusAdminLayout();
@@ -24,15 +22,16 @@ function switchBusAdminTab(tab) {
 
 function switchBusAdminFloor(floor) {
     busAdminFloor = floor;
-    document.getElementById('bus-adm-floor1-btn').className = floor === 1
-        ? 'flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 text-white' : 'flex-1 py-2 rounded-xl text-xs font-bold text-slate-500';
-    document.getElementById('bus-adm-floor2-btn').className = floor === 2
-        ? 'flex-1 py-2 rounded-xl text-xs font-bold bg-slate-800 text-white' : 'flex-1 py-2 rounded-xl text-xs font-bold text-slate-500';
+    document.getElementById('bus-adm-floor1-btn').className = floor === 1 ? 'on' : '';
+    document.getElementById('bus-adm-floor2-btn').className = floor === 2 ? 'on' : '';
     renderBusAdminLayout();
 }
 
 function renderBusAdminLayout() {
     if (!busConfig) return;
+    if (!busConfig.floor1_cells) busConfig.floor1_cells = {};
+    if (!busConfig.floor2_cells) busConfig.floor2_cells = {};
+    switchBusAdminFloorUI();
     const rows = busAdminFloor === 1 ? busConfig.floor1_rows : busConfig.floor2_rows;
     const cols = busAdminFloor === 1 ? busConfig.floor1_cols : busConfig.floor2_cols;
     document.getElementById('bus-inp-rows').value = rows;
@@ -44,7 +43,7 @@ function renderBusAdminLayout() {
     const container = document.getElementById('bus-admin-seat-map');
     container.innerHTML = '';
     container.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
-    const gridWidth = cols * 60;
+    const gridWidth = cols * 62;
     container.style.width = gridWidth + 'px';
     if (container.parentElement) container.parentElement.style.width = gridWidth + 'px';
 
@@ -54,14 +53,11 @@ function renderBusAdminLayout() {
             const cell = cells[key] || { type: 'seat', label: BUS_ALPHABET[r % 26] + (c + 1) };
 
             const div = document.createElement('div');
-            let styleClass = 'bg-white border-slate-200 text-slate-500 hover:border-[#00b272]';
-            let content = cell.label;
-            if (cell.type === 'driver') { styleClass = 'bg-slate-700 text-white'; content = '🚘'; }
-            if (cell.type === 'stairs') { styleClass = 'bg-slate-400 text-white'; content = '🪜'; }
-            if (cell.type === 'empty') { styleClass = 'bg-slate-100 border-dashed border-slate-300 text-slate-300'; content = ''; }
-
-            div.className = 'aspect-square rounded-lg flex items-center justify-center text-[9px] font-bold cursor-pointer border transition ' + styleClass;
-            div.innerText = content;
+            div.className = 'seat seat-vacant';
+            div.innerText = cell.label || '';
+            if (cell.type === 'driver') { div.innerHTML = '<i class="fa-solid fa-user-tie"></i>'; div.style.cssText = 'background:var(--surface3);color:var(--gold)'; }
+            if (cell.type === 'stairs') { div.innerHTML = '<i class="fa-solid fa-stairs"></i>'; div.style.cssText = 'background:var(--surface3);color:var(--gold)'; }
+            if (cell.type === 'empty') { div.innerText = ''; div.style.cssText = 'background:transparent;border:1px dashed var(--line);'; }
             div.onclick = () => openBusCellEditor(r, c, cell);
             container.appendChild(div);
         }
@@ -98,8 +94,8 @@ function saveBusCellEditor() {
 }
 
 function resetBusLayout() {
-    const r = parseInt(document.getElementById('bus-inp-rows').value) || 10;
-    const c = parseInt(document.getElementById('bus-inp-cols').value) || 4;
+    const r = Math.min(Math.max(parseInt(document.getElementById('bus-inp-rows').value) || 10, 1), 26);
+    const c = Math.min(Math.max(parseInt(document.getElementById('bus-inp-cols').value) || 4, 1), 12);
     if (busAdminFloor === 1) { busConfig.floor1_rows = r; busConfig.floor1_cols = c; }
     else { busConfig.floor2_rows = r; busConfig.floor2_cols = c; }
     renderBusAdminLayout();
@@ -155,7 +151,7 @@ function renderBusAdminObjects() {
         } else {
             w.className = `wall-v ${wallClassMap[obj.type] || ''}`;
             w.style.top = obj.top + '%';
-            w.style[obj.side] = '-4px';
+            w.style[obj.side === 'right' ? 'right' : 'left'] = '-4px';
             w.style.height = '60px';
         }
         w.style.pointerEvents = 'auto';
@@ -171,7 +167,8 @@ async function saveBusConfig() {
     saveBtn.disabled = true;
     saveBtn.innerText = 'กำลังบันทึก...';
 
-    const { error } = await _supabase.from('bus_room').update({
+    const { error } = await _supabase.from('bus_room').upsert({
+        id: 1,
         floor1_rows: busConfig.floor1_rows,
         floor1_cols: busConfig.floor1_cols,
         floor2_rows: busConfig.floor2_rows,
@@ -180,33 +177,43 @@ async function saveBusConfig() {
         floor2_cells: busConfig.floor2_cells,
         floor1_objects: busConfig.floor1_objects,
         floor2_objects: busConfig.floor2_objects
-    }).eq('id', 1);
+    });
 
     saveBtn.disabled = false;
     saveBtn.innerText = 'บันทึกผังที่นั่งรถบัส';
 
     if (!error) showAlert('สำเร็จ', 'บันทึกผังที่นั่งรถบัสเรียบร้อยแล้ว', 'success');
-    else showAlert('ข้อผิดพลาด', 'บันทึกไม่สำเร็จ กรุณาลองใหม่', 'error');
+    else showAlert('ข้อผิดพลาด', dbErrorText(error), 'error');
 }
 
 async function saveBusOpenTime() {
     const val = document.getElementById('bus-open-time-input').value;
     if (!val) return showAlert('แจ้งเตือน', 'กรุณาเลือกวันและเวลา', 'warning');
     const iso = new Date(val).toISOString();
-    const { error } = await _supabase.from('bus_room').update({ booking_open_at: iso }).eq('id', 1);
+    const { error } = await _supabase.from('bus_room').upsert({ id: 1, booking_open_at: iso });
     if (!error) {
         busConfig.booking_open_at = iso;
         showAlert('สำเร็จ', 'ตั้งเวลาเปิดจองเรียบร้อยแล้ว', 'success');
     } else {
-        showAlert('ข้อผิดพลาด', 'ตั้งเวลาไม่สำเร็จ', 'error');
+        showAlert('ข้อผิดพลาด', dbErrorText(error), 'error');
     }
+}
+
+function openBusBookingNow() {
+    const iso = new Date(Date.now() - 60000).toISOString();
+    _supabase.from('bus_room').upsert({ id: 1, booking_open_at: iso }).then(({ error }) => {
+        if (error) return showAlert('ข้อผิดพลาด', dbErrorText(error), 'error');
+        busConfig.booking_open_at = iso;
+        switchBusAdminTab('time');
+        showAlert('สำเร็จ', 'เปิดให้จองที่นั่งรถบัสแล้วตั้งแต่ตอนนี้', 'success');
+    });
 }
 
 function renderBusAdminBookingsList() {
     const container = document.getElementById('bus-admin-bookings-list');
     container.innerHTML = '';
     if (!busBookings || busBookings.length === 0) {
-        container.innerHTML = '<p class="text-center text-gray-400 italic py-4">ยังไม่มีคนจองที่นั่งรถบัส</p>';
+        container.innerHTML = '<div class="empty">ยังไม่มีคนจองที่นั่งรถบัส</div>';
         return;
     }
     busBookings
@@ -214,16 +221,16 @@ function renderBusAdminBookingsList() {
         .sort((a, b) => a.floor - b.floor || String(a.seat_label).localeCompare(String(b.seat_label)))
         .forEach(b => {
             const row = document.createElement('div');
-            row.className = 'flex justify-between items-center p-2.5 bg-slate-50 rounded-xl border border-slate-100 mb-2 text-xs';
+            row.className = 'row-item';
             row.innerHTML = `
-                <div>
-                    <p class="font-bold text-slate-800">ชั้น ${b.floor} - ${b.seat_label}</p>
-                    <p class="text-gray-400">${b.name} (${b.student_id})</p>
+                <div class="min-w-0">
+                    <p class="font-semibold"><span class="gold">ชั้น ${Number(b.floor)} · ${esc(b.seat_label)}</span></p>
+                    <p class="muted text-[11px] truncate">${esc(b.name)} (${esc(b.student_id)})</p>
                 </div>
-                <div class="flex items-center gap-3">
-                    <span class="${b.checked_in ? 'text-green-600' : 'text-gray-300'} font-bold text-[10px]">${b.checked_in ? 'เช็คอินแล้ว' : 'ยังไม่เช็คอิน'}</span>
-                    <button onclick="viewBusTicketAdmin(${b.id})" class="text-sky-500 hover:text-sky-700"><i class="fa-solid fa-eye"></i></button>
-                    <button onclick="removeBusBookingAdmin(${b.id})" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash-can"></i></button>
+                <div class="flex items-center gap-2">
+                    <span class="chip ${b.checked_in ? 'chip-ok' : ''}">${b.checked_in ? 'เช็กอินแล้ว' : 'ยังไม่เช็กอิน'}</span>
+                    <button onclick="viewBusTicketAdmin(${Number(b.id)})" class="icon-btn"><i class="fa-solid fa-eye"></i></button>
+                    <button onclick="removeBusBookingAdmin(${Number(b.id)})" class="icon-btn del"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
             `;
             container.appendChild(row);
@@ -238,11 +245,10 @@ function viewBusTicketAdmin(id) {
 function removeBusBookingAdmin(id) {
     showAlert('ยืนยัน', 'ต้องการลบที่นั่งจองของนักเรียนคนนี้ใช่หรือไม่?', 'confirm', async () => {
         const { error } = await _supabase.from('bus_bookings').delete().eq('id', id);
-        if (!error) {
-            showAlert('สำเร็จ', 'ลบรายการจองเรียบร้อย', 'success');
-            await loadBusData();
-            renderBusAdminBookingsList();
-        }
+        if (error) return showAlert('ข้อผิดพลาด', dbErrorText(error), 'error');
+        showAlert('สำเร็จ', 'ลบรายการจองเรียบร้อย', 'success');
+        await loadBusData();
+        renderBusAdminBookingsList();
     });
 }
 
@@ -296,7 +302,7 @@ function printAllBusTickets() {
             <div class="ticket-cell">
                 <div class="tk-header">
                     <div>
-                        <p class="tk-brand">BUSDING PASS</p>
+                        <p class="tk-brand">BUS BOARDING PASS</p>
                         <p class="tk-subtitle">ตั๋วรถบัสทัศนศึกษา</p>
                     </div>
                     <i class="fa-solid fa-bus"></i>
@@ -305,11 +311,11 @@ function printAllBusTickets() {
                     <div class="ticket-left">
                         <div class="tk-field">
                             <p class="tk-label">ชื่อผู้โดยสาร</p>
-                            <p class="tk-value tk-name">${b.name}</p>
+                            <p class="tk-value tk-name">${esc(b.name)}</p>
                         </div>
                         <div class="tk-field-row">
-                            <div class="tk-field"><p class="tk-label">เลขประจำตัว</p><p class="tk-value">${b.student_id}</p></div>
-                            <div class="tk-field"><p class="tk-label">ชั้น</p><p class="tk-value">${b.floor}</p></div>
+                            <div class="tk-field"><p class="tk-label">เลขประจำตัว</p><p class="tk-value">${esc(b.student_id)}</p></div>
+                            <div class="tk-field"><p class="tk-label">ชั้น</p><p class="tk-value">${Number(b.floor)}</p></div>
                         </div>
                         <div class="tk-field-row">
                             <div class="tk-field"><p class="tk-label">วันที่จอง</p><p class="tk-value">${dateStr}</p></div>
@@ -321,7 +327,7 @@ function printAllBusTickets() {
                     </div>
                     <div class="ticket-right">
                         <p class="tk-seat-label">ที่นั่ง</p>
-                        <p class="tk-seat">${b.seat_label}</p>
+                        <p class="tk-seat">${esc(b.seat_label)}</p>
                         <img src="${qrDataUrl}" class="tk-qr">
                     </div>
                 </div>
@@ -368,16 +374,16 @@ function printAllBusTickets() {
             }
             .print-page:last-child { page-break-after: auto; }
             .ticket-cell {
-                border: 1px dashed #94a3b8;
+                border: 1px dashed #b9a56b;
                 border-radius: 3mm;
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
-                background: white;
+                background: #fbf7ec;
             }
             .tk-header {
-                background: #0ea5e9;
-                color: white;
+                background: #1c150a;
+                color: #f0deb0;
                 padding: 2mm 3mm;
                 display: flex;
                 align-items: flex-start;
@@ -398,7 +404,7 @@ function printAllBusTickets() {
             .tk-divider { height: 100%; border-left: 1px dashed #cbd5e1; }
             .ticket-right { width: 26mm; flex-shrink: 0; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2mm; gap: 1mm; }
             .tk-seat-label { font-size: 5.5pt; color: #94a3b8; margin: 0; text-transform: uppercase; }
-            .tk-seat { font-size: 12pt; font-weight: bold; color: #00b272; margin: 0; }
+            .tk-seat { font-size: 12pt; font-weight: bold; color: #8a6a24; margin: 0; }
             .tk-qr { width: 14mm; height: 14mm; }
         </style>
         </head>
@@ -418,6 +424,7 @@ function startBusScanner() {
     el.innerHTML = '';
     document.getElementById('bus-scan-detail').classList.add('hidden');
     currentScanBookingId = null;
+    stopBusScanner();
 
     busQrScanner = new Html5Qrcode('bus-qr-reader');
     busQrScanner.start(
@@ -426,14 +433,15 @@ function startBusScanner() {
         onBusScanSuccess,
         () => {}
     ).catch(() => {
-        el.innerHTML = '<p class="text-red-500 text-xs font-bold text-center py-4">ไม่สามารถเปิดกล้องได้ กรุณาอนุญาตการใช้งานกล้องในเบราว์เซอร์</p>';
+        el.innerHTML = '<p class="danger text-xs font-semibold text-center py-4">ไม่สามารถเปิดกล้องได้ กรุณาอนุญาตการใช้งานกล้องในเบราว์เซอร์</p>';
     });
 }
 
 function stopBusScanner() {
     if (busQrScanner) {
-        busQrScanner.stop().catch(() => {});
+        const s = busQrScanner;
         busQrScanner = null;
+        try { s.stop().then(() => s.clear()).catch(() => {}); } catch (e) { /* กล้องยังไม่เริ่ม */ }
     }
 }
 
@@ -447,7 +455,7 @@ async function onBusScanSuccess(decodedText) {
     const { data: booking } = await _supabase.from('bus_bookings').select('*').eq('id', payload.bookingId).maybeSingle();
 
     if (!booking) {
-        document.getElementById('bus-qr-reader').innerHTML = '<p class="text-red-500 text-xs font-bold text-center py-4">ไม่พบข้อมูลการจองนี้ในระบบ</p>';
+        document.getElementById('bus-qr-reader').innerHTML = '<p class="danger text-xs font-semibold text-center py-4">ไม่พบข้อมูลการจองนี้ในระบบ</p>';
         setTimeout(() => startBusScanner(), 2000);
         return;
     }
@@ -476,4 +484,11 @@ async function confirmBusCheckin() {
 
     document.getElementById('bus-scan-detail').classList.add('hidden');
     setTimeout(() => startBusScanner(), 500);
+}
+
+
+// ปุ่มชั้น 1/2 ในแผงแอดมินให้ตรงกับชั้นที่กำลังแก้
+function switchBusAdminFloorUI() {
+    document.getElementById('bus-adm-floor1-btn').className = busAdminFloor === 1 ? 'on' : '';
+    document.getElementById('bus-adm-floor2-btn').className = busAdminFloor === 2 ? 'on' : '';
 }
