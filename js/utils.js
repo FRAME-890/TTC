@@ -1,86 +1,87 @@
+// ==========================================================
+//  utils.js — ฟังก์ชันช่วยเหลือกลาง: ป้องกัน XSS, แจ้งเตือน, นำทางหน้า
+// ==========================================================
+
+// แปลงข้อความจากผู้ใช้ให้ปลอดภัยก่อนใส่ใน innerHTML (กัน XSS)
+function esc(v) {
+    return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// แปลงข้อความ error จากฐานข้อมูลให้เป็นภาษาที่เข้าใจง่าย
+function dbErrorText(error) {
+    if (!error) return '';
+    const msg = String(error.message || error);
+    if (error.code === '42501' || /row-level security/i.test(msg)) {
+        return 'ฐานข้อมูลไม่อนุญาตให้ทำรายการนี้ (Row Level Security) — ให้เปิดสิทธิ์ตามไฟล์ supabase-setup.sql';
+    }
+    if (error.code === '23505') return 'ข้อมูลนี้มีอยู่ในระบบแล้ว (ซ้ำ)';
+    if (error.code === '23503') return 'ข้อมูลนี้ถูกอ้างอิงอยู่ในตารางอื่น จึงทำรายการไม่ได้';
+    return msg;
+}
+
+const ALERT_ICONS = {
+    success: 'fa-circle-check', error: 'fa-circle-xmark',
+    warning: 'fa-triangle-exclamation', confirm: 'fa-circle-question'
+};
+
+let alertHideTimer = null;
+
 function showAlert(title, message, type = 'success', onConfirm = null) {
-            const modal = document.getElementById('custom-alert-modal');
-            const card = modal.querySelector('.glass');
-            const iconBox = document.getElementById('alert-icon-box');
-            const icon = document.getElementById('alert-icon');
-            const actionContainer = document.getElementById('alert-action-buttons');
-            
-            document.getElementById('alert-title').innerText = title;
-            document.getElementById('alert-message').innerText = message;
-            
-            iconBox.className = "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-lg";
-            
-            if (type === 'success') {
-                iconBox.classList.add('bg-green-100', 'text-green-600', 'shadow-green-100');
-                icon.className = "fa-solid fa-circle-check";
-            } else if (type === 'error') {
-                iconBox.classList.add('bg-red-100', 'text-red-600', 'shadow-red-100');
-                icon.className = "fa-solid fa-circle-xmark";
-            } else if (type === 'warning') {
-                iconBox.classList.add('bg-amber-100', 'text-amber-600', 'shadow-amber-100');
-                icon.className = "fa-solid fa-triangle-exclamation";
-            } else if (type === 'confirm') {
-                iconBox.classList.add('bg-blue-100', 'text-blue-600', 'shadow-blue-100');
-                icon.className = "fa-solid fa-circle-question";
-            }
+    const modal = document.getElementById('custom-alert-modal');
+    clearTimeout(alertHideTimer); // กันตัวหน่วงเวลาปิดของหน้าต่างก่อนหน้า มาซ่อนหน้าต่างใหม่ทิ้ง
+    const card = modal.querySelector('.modal');
+    document.getElementById('alert-title').innerText = title;
+    document.getElementById('alert-message').innerText = message;
+    document.getElementById('alert-icon-box').className = 'alert-ico ai-' + type;
+    document.getElementById('alert-icon').className = 'fa-solid ' + (ALERT_ICONS[type] || ALERT_ICONS.success);
 
-            if (type === 'confirm') {
-                actionContainer.innerHTML = `
-                    <button onclick="closeCustomAlert()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl text-xs font-bold transition">ยกเลิก</button>
-                    <button id="alert-confirm-execute" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold shadow-md transition">ยืนยัน</button>
-                `;
-                document.getElementById('alert-confirm-execute').onclick = () => {
-                    closeCustomAlert();
-                    if (onConfirm) onConfirm();
-                };
-            } else {
-                actionContainer.innerHTML = `
-                    <button onclick="closeCustomAlert()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-xs font-bold shadow-md transition">ตกลง</button>
-                `;
-            }
+    const actions = document.getElementById('alert-action-buttons');
+    if (type === 'confirm') {
+        actions.innerHTML = `
+            <button onclick="closeCustomAlert()" class="btn btn-quiet flex-1">ยกเลิก</button>
+            <button id="alert-confirm-execute" class="btn btn-gold flex-1">ยืนยัน</button>`;
+        document.getElementById('alert-confirm-execute').onclick = () => {
+            closeCustomAlert();
+            if (onConfirm) onConfirm();
+        };
+    } else {
+        actions.innerHTML = `<button onclick="closeCustomAlert()" class="btn btn-gold btn-block">ตกลง</button>`;
+    }
 
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                card.classList.remove('scale-95');
-                card.classList.add('scale-100');
-            }, 10);
-        }
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        card.classList.remove('scale-95');
+    }, 10);
+}
 
-        function closeCustomAlert() {
-            const modal = document.getElementById('custom-alert-modal');
-            const card = modal.querySelector('.glass');
-            
-            modal.classList.add('opacity-0');
-            card.classList.remove('scale-100');
-            card.classList.add('scale-95');
-            
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
-        }
+function closeCustomAlert() {
+    const modal = document.getElementById('custom-alert-modal');
+    modal.classList.add('opacity-0');
+    modal.querySelector('.modal').classList.add('scale-95');
+    clearTimeout(alertHideTimer);
+    alertHideTimer = setTimeout(() => modal.classList.add('hidden'), 300);
+}
 
-        function showNav() {
-            if (userData.role === 'admin') {
-                document.getElementById('admin-trigger').classList.remove('hidden');
-                document.getElementById('user-info').classList.add('hidden');
-                document.getElementById('user-display-name').innerText = userData.name;
-                document.getElementById('user-display-id').innerText = "ID: " + userData.student_id;
-            } else {
-                document.getElementById('admin-trigger').classList.add('hidden');
-                document.getElementById('user-info').classList.remove('hidden');
-                document.getElementById('student-name').innerText = userData.name;
-                document.getElementById('student-id-display').innerText = "ID: " + userData.student_id;
-            }
-            document.getElementById('nav').classList.remove('hidden');
-        }
+function showNav() {
+    const isAdmin = userData.role === 'admin';
+    document.getElementById('admin-trigger').classList.toggle('hidden', !isAdmin);
+    document.getElementById('nav-name').innerText = userData.name || '-';
+    document.getElementById('nav-id').innerText = 'ID: ' + userData.student_id;
+    document.getElementById('nav-avatar').innerText = (userData.name || '?').trim().charAt(0);
+    document.getElementById('nav').classList.remove('hidden');
+}
 
-        function goToPage(id, isBackNavigation) {
-    ['login-page', 'landing-page', 'main-app', 'bus-page', 'duty-page', 'homework-page', 'fund-page', 'vote-page', 'admin-panel'].forEach(p => {
-        if(document.getElementById(p)) document.getElementById(p).classList.add('hidden');
+const ALL_PAGES = ['login-page', 'landing-page', 'main-app', 'bus-page', 'duty-page', 'homework-page', 'fund-page', 'vote-page', 'admin-panel'];
+
+function goToPage(id, isBackNavigation) {
+    ALL_PAGES.forEach(p => {
+        const el = document.getElementById(p);
+        if (el) el.classList.add('hidden');
     });
     document.getElementById(id).classList.remove('hidden');
-    if(id === 'landing-page' && userData) {
+
+    if (id === 'landing-page' && userData) {
         document.getElementById('landing-name').innerText = userData.name;
     }
     if (id !== 'vote-page' && voteSubscription) {
@@ -90,19 +91,16 @@ function showAlert(title, message, type = 'success', onConfirm = null) {
     if (id !== 'bus-page' && id !== 'admin-panel' && typeof unsubscribeBusRealtime === 'function') {
         unsubscribeBusRealtime();
     }
+    if (id !== 'admin-panel' && typeof stopBusScanner === 'function') stopBusScanner();
+    window.scrollTo({ top: 0 });
 
-    // ---- ส่วนที่เพิ่มใหม่: บันทึกลงประวัติเบราว์เซอร์ ----
-    // isBackNavigation = true หมายถึงการเรียกนี้มาจากการกดปุ่มย้อนกลับเอง
-    // (มาจาก popstate ด้านล่าง) จึงไม่ต้อง pushState ซ้ำ ไม่งั้นจะวนลูป
-    if (!isBackNavigation) {
-        history.pushState({ page: id }, '', '#' + id);
-    }
+    // บันทึกลงประวัติเบราว์เซอร์ เพื่อให้ปุ่มย้อนกลับของเครื่องใช้งานได้
+    if (!isBackNavigation) history.pushState({ page: id }, '', '#' + id);
 }
 
-// ---- ดักจับปุ่มย้อนกลับของอุปกรณ์/เบราว์เซอร์ ----
 window.addEventListener('popstate', (e) => {
-    const targetPage = (e.state && e.state.page) ? e.state.page : 'landing-page';
-    if (document.getElementById(targetPage)) {
-        goToPage(targetPage, true); // true = อย่า pushState ซ้ำ
-    }
+    if (!userData) return;
+    const target = (e.state && e.state.page) ? e.state.page : 'landing-page';
+    if (target === 'login-page') return;
+    if (document.getElementById(target)) goToPage(target, true);
 });
