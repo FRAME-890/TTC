@@ -1,149 +1,124 @@
+// ==========================================================
+//  vote.js — ระบบโหวต
+// ==========================================================
 async function loadVoteData() {
     try {
         const { data: polls } = await _supabase.from('polls').select('*').order('created_at', { ascending: false });
         activePolls = polls || [];
 
-        const { data: votes } = await _supabase.from('poll_votes').select('*').eq('student_id', userData.student_id);
-        myVotes = votes || [];
+        const { data: mine } = await _supabase.from('poll_votes').select('*').eq('student_id', userData.student_id);
+        myVotes = mine || [];
 
-        for(let poll of activePolls) {
-            const { data: allVotes } = await _supabase.from('poll_votes').select('option_index').eq('poll_id', poll.id);
-            poll.votesData = allVotes || [];
+        // ดึงคะแนนทุกโพลในคำสั่งเดียว (เดิมยิงทีละโพล ช้ามากเมื่อโพลเยอะ)
+        activePolls.forEach(p => { p.votesData = []; });
+        if (activePolls.length) {
+            const { data: all } = await _supabase.from('poll_votes').select('poll_id, option_index').in('poll_id', activePolls.map(p => p.id));
+            (all || []).forEach(v => {
+                const poll = activePolls.find(p => String(p.id) === String(v.poll_id));
+                if (poll) poll.votesData.push(v);
+            });
         }
 
         renderPollsList();
+        if (!document.getElementById('admtab-vote').classList.contains('hidden')) renderAdminVoteList();
+        subscribeVoteRealtime();
+    } catch (err) { console.error(err); }
+}
 
-        if (voteSubscription) _supabase.removeChannel(voteSubscription);
-        voteSubscription = _supabase.channel('public:poll_votes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'poll_votes' }, () => {
-            loadVoteData();
-        })
+function subscribeVoteRealtime() {
+    if (voteSubscription) return; // สมัครครั้งเดียว ไม่สร้างซ้ำทุกครั้งที่โหลด
+    voteSubscription = _supabase.channel('public:poll_votes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'poll_votes' }, () => loadVoteData())
         .subscribe();
-
-    } catch(err) { console.error(err); }
 }
 
 function renderPollsList() {
-    const container = document.getElementById('polls-list-container');
-    container.innerHTML = '';
-
-    if(activePolls.length === 0) {
-        container.innerHTML = `<div class="text-center py-12 bg-white/60 text-slate-400 rounded-3xl font-medium border border-dashed border-slate-200">ยังไม่มีหัวข้อเปิดโหวตในขณะนี้</div>`;
+    const box = document.getElementById('polls-list-container');
+    if (activePolls.length === 0) {
+        box.innerHTML = `<div class="empty">ยังไม่มีหัวข้อเปิดโหวตในขณะนี้</div>`;
         return;
     }
 
-    activePolls.forEach(poll => {
-        const card = document.createElement('div');
-        card.id = `poll-card-${poll.id}`;
-        card.className = "bg-white p-6 rounded-3xl border shadow-sm space-y-4 animate-pop transition-all duration-300";
-
-        const myVotedInThisPoll = myVotes.find(v => String(v.poll_id) === String(poll.id));
-        const totalVotesCount = poll.votesData ? poll.votesData.length : 0;
-
-        let optionsHTML = '';
-        poll.options.forEach((opt, index) => {
-            const optVotesCount = poll.votesData ? poll.votesData.filter(v => v.option_index === index).length : 0;
-            const percent = totalVotesCount > 0 ? ((optVotesCount / totalVotesCount) * 100).toFixed(0) : 0;
-            const isSelectedOption = myVotedInThisPoll && myVotedInThisPoll.option_index === index;
-
-            optionsHTML += `
-                <div class="relative flex flex-col justify-center p-3.5 border rounded-2xl overflow-hidden group transition ${
-                    isSelectedOption ? 'border-rose-400 bg-rose-50/20' : 'bg-gray-50/50 hover:bg-gray-50'
-                }">
-                    <div class="absolute inset-y-0 left-0 bg-rose-100/60 transition-all duration-500" style="width: ${percent}%"></div>
-                    <div class="relative flex justify-between items-center z-10 text-xs font-semibold">
-                        <span class="text-slate-700 flex items-center gap-2">
-                            ${isSelectedOption ? '<i class="fa-solid fa-circle-check text-rose-500"></i>' : '<i class="fa-regular fa-circle text-gray-300"></i>'}
-                            ${opt}
-                        </span>
-                        <span class="text-rose-600 font-bold">${optVotesCount} โหวต (${percent}%)</span>
-                    </div>
-                    ${!myVotedInThisPoll ? `<button onclick="castVote(${poll.id}, ${index})" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"></button>` : ''}
+    box.innerHTML = activePolls.map(poll => {
+        const mine = myVotes.find(v => String(v.poll_id) === String(poll.id));
+        const total = poll.votesData.length;
+        const options = (Array.isArray(poll.options) ? poll.options : []).map((opt, i) => {
+            const count = poll.votesData.filter(v => v.option_index === i).length;
+            const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+            const sel = mine && mine.option_index === i;
+            return `
+            <div class="bar-wrap ${sel ? 'mine' : ''}">
+                <div class="bar-fill" style="width:${pct}%"></div>
+                <div class="relative flex justify-between items-center text-xs font-medium gap-3">
+                    <span class="flex items-center gap-2">${sel ? '<i class="fa-solid fa-circle-check gold"></i>' : '<i class="fa-regular fa-circle faint"></i>'} ${esc(opt)}</span>
+                    <span class="gold font-semibold shrink-0">${count} โหวต · ${pct}%</span>
                 </div>
-            `;
-        });
+                ${!mine ? `<button onclick="castVote(${Number(poll.id)}, ${i})" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" aria-label="โหวต ${esc(opt)}"></button>` : ''}
+            </div>`;
+        }).join('');
 
-        let deleteBtnHTML = '';
-        if(String(poll.created_by) === String(userData.student_id) || userData.role === 'admin') {
-            deleteBtnHTML = `<button onclick="deletePoll(${poll.id})" class="text-xs text-gray-400 hover:text-red-500 font-bold transition"><i class="fa-solid fa-trash-can"></i> ลบโหวต</button>`;
-        }
-
-        card.innerHTML = `
+        const canDelete = String(poll.created_by) === String(userData.student_id) || userData.role === 'admin';
+        return `
+        <div id="poll-card-${Number(poll.id)}" class="card card-pad space-y-4 animate-pop" style="transition:box-shadow .3s">
             <div class="flex justify-between items-start gap-4">
                 <div>
-                    <h3 class="font-bold text-slate-800 text-base"><i class="fa-solid fa-circle-question text-rose-500 mr-1.5"></i> ${poll.question}</h3>
-                    <p class="text-[10px] text-gray-400 mt-1 font-medium"><i class="fa-solid fa-users"></i> ผู้ร่วมโหวตทั้งหมด: ${totalVotesCount} คน</p>
+                    <h3 class="display text-base"><i class="fa-solid fa-circle-question gold"></i> ${esc(poll.question)}</h3>
+                    <p class="text-[10px] muted mt-1"><i class="fa-solid fa-users"></i> ผู้ร่วมโหวต ${total} คน ${mine ? '· คุณโหวตแล้ว' : '· แตะตัวเลือกเพื่อโหวต'}</p>
                 </div>
-                <div class="flex items-center gap-3 shrink-0">
-                    <button onclick="sharePoll(${poll.id})" class="text-xs text-gray-400 hover:text-sky-500 font-bold transition"><i class="fa-solid fa-share-nodes"></i> แชร์</button>
-                    ${deleteBtnHTML}
+                <div class="flex items-center gap-1 shrink-0">
+                    <button onclick="sharePoll(${Number(poll.id)})" class="btn btn-quiet btn-sm"><i class="fa-solid fa-share-nodes"></i> แชร์</button>
+                    ${canDelete ? `<button onclick="deletePoll(${Number(poll.id)})" class="btn btn-quiet btn-sm"><i class="fa-solid fa-trash-can"></i></button>` : ''}
                 </div>
             </div>
-            <div class="space-y-2.5 pt-2">${optionsHTML}</div>
-        `;
-        container.appendChild(card);
-    });
+            <div class="space-y-2">${options}</div>
+        </div>`;
+    }).join('');
 }
 
-// ---- แชร์ลิงก์โหวต: คัดลอกลิงก์ไปยังคลิปบอร์ดให้เพื่อนกดเข้ามาโหวตได้เลย ----
 function sharePoll(pollId) {
     const url = `${window.location.origin}${window.location.pathname}?poll=${pollId}`;
-
     if (navigator.share) {
-        // อุปกรณ์ที่รองรับเมนูแชร์ของระบบ (มือถือส่วนใหญ่) เปิดเมนูแชร์เลย
-        navigator.share({ title: 'ร่วมโหวตกันเถอะ!', url: url }).catch(() => {});
-    } else {
-        navigator.clipboard.writeText(url).then(() => {
-            showAlert('คัดลอกลิงก์แล้ว', 'นำลิงก์นี้ไปวางในแชทเพื่อนๆ ได้เลย เปิดลิงก์แล้วจะพาไปหน้าโหวตนี้โดยตรง', 'success');
-        }).catch(() => {
-            showAlert('ข้อผิดพลาด', 'คัดลอกลิงก์ไม่สำเร็จ กรุณาลองใหม่', 'error');
-        });
+        navigator.share({ title: 'ร่วมโหวตกันเถอะ!', url }).catch(() => {});
+    } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(
+            () => showAlert('คัดลอกลิงก์แล้ว', 'นำลิงก์ไปวางในแชทเพื่อนได้เลย เปิดแล้วจะพาไปที่โหวตนี้โดยตรง', 'success'),
+            () => showAlert('ข้อผิดพลาด', 'คัดลอกลิงก์ไม่สำเร็จ', 'error'));
     }
 }
 
 async function createNewPoll() {
     const question = document.getElementById('vote-question').value.trim();
-    const rawOptions = document.getElementById('vote-options').value.trim();
+    const raw = document.getElementById('vote-options').value;
+    if (!question || !raw.trim()) return showAlert('แจ้งเตือน', 'กรุณากรอกหัวข้อและตัวเลือกให้ครบ', 'warning');
 
-    if(!question || !rawOptions) return showAlert("แจ้งเตือน", "กรุณากรอกหัวข้อคำถามและระบุตัวเลือกให้ครบถ้วน", "warning");
+    // รองรับทั้งคอมม่าภาษาอังกฤษ , และภาษาไทย/จีน ， และขึ้นบรรทัดใหม่
+    const options = [...new Set(raw.split(/[,，\n]/).map(o => o.trim()).filter(Boolean))];
+    if (options.length < 2) return showAlert('แจ้งเตือน', 'ใส่ตัวเลือกอย่างน้อย 2 ตัวเลือก (คั่นด้วยคอมม่า)', 'warning');
 
-    const optionsArray = rawOptions.split(',').map(o => o.trim()).filter(o => o.length > 0);
-    if(optionsArray.length < 2) return showAlert("แจ้งเตือน", "กรุณาใส่ตัวเลือกอย่างน้อย 2 ตัวเลือกขึ้นไป (แยกกันด้วยคอมม่า ,)", "warning");
+    const { error } = await _supabase.from('polls').insert([{ question, options, created_by: userData.student_id }]);
+    if (error) return showAlert('ข้อผิดพลาด', dbErrorText(error), 'error');
 
-    const { error } = await _supabase.from('polls').insert([{
-        question: question,
-        options: optionsArray,
-        created_by: userData.student_id
-    }]);
-
-    if(!error) {
-        document.getElementById('vote-question').value = '';
-        document.getElementById('vote-options').value = '';
-        showAlert("สำเร็จ", "เปิดใช้งานหัวข้อโหวตใหม่เรียบร้อยแล้ว", "success");
-        loadVoteData();
-    } else {
-        showAlert("ข้อผิดพลาด", "ไม่สามารถเปิดหัวข้อโหวตได้ในขณะนี้", "error");
-    }
+    document.getElementById('vote-question').value = '';
+    document.getElementById('vote-options').value = '';
+    showAlert('สำเร็จ', 'เปิดโหวตใหม่เรียบร้อยแล้ว', 'success');
+    loadVoteData();
 }
 
 async function castVote(pollId, optionIndex) {
-    const { error } = await _supabase.from('poll_votes').insert([{
-        poll_id: pollId,
-        student_id: userData.student_id,
-        option_index: optionIndex
-    }]);
-    if(!error) loadVoteData();
-    else showAlert("ปฏิเสธ", "คุณสิทธิ์ลงคะแนนเสียงไปแล้ว ไม่สามารถแก้ไขหรือโหวตซ้ำได้", "error");
+    const { error } = await _supabase.from('poll_votes').insert([{ poll_id: pollId, student_id: userData.student_id, option_index: optionIndex }]);
+    if (error) {
+        await loadVoteData();
+        return showAlert('โหวตไม่ได้', error.code === '23505' ? 'คุณโหวตหัวข้อนี้ไปแล้ว ไม่สามารถโหวตซ้ำได้' : dbErrorText(error), 'error');
+    }
+    loadVoteData();
 }
 
 function deletePoll(pollId) {
-    showAlert("ยืนยันการลบ", "คุณต้องการปิดและลบหัวข้อโหวตนี้ออกจากระบบถาวรใช่หรือไม่?", "confirm", async () => {
+    showAlert('ยืนยันการลบ', 'ลบหัวข้อโหวตนี้ออกจากระบบถาวรใช่หรือไม่?', 'confirm', async () => {
+        await _supabase.from('poll_votes').delete().eq('poll_id', pollId); // ลบคะแนนก่อน กัน foreign key ค้าง
         const { error } = await _supabase.from('polls').delete().eq('id', pollId);
-        if(!error) {
-            showAlert("สำเร็จ", "ลบหัวข้อโหวตเรียบร้อย", "success");
-            loadVoteData();
-        } else {
-            showAlert("ข้อผิดพลาด", "ไม่สามารถลบข้อมูลโหวตได้", "error");
-        }
+        if (error) return showAlert('ข้อผิดพลาด', dbErrorText(error), 'error');
+        showAlert('สำเร็จ', 'ลบหัวข้อโหวตเรียบร้อย', 'success');
+        loadVoteData();
     });
 }
