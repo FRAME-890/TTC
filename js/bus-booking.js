@@ -241,3 +241,11 @@ async function showMyBusTicket() {
 }
 
 function closeBusTicket() { document.getElementById('bus-ticket-modal').classList.add('hidden'); }
+
+// กด Esc เพื่อปิดตั๋ว
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        const m = document.getElementById('bus-ticket-modal');
+        if (m && !m.classList.contains('hidden')) closeBusTicket();
+    }
+});
