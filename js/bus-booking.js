@@ -221,7 +221,7 @@ function renderTicketModal(booking, allowCancel) {
 
     const checkin = document.getElementById('bus-ticket-checkin');
     checkin.innerText = booking.checked_in ? '✓ เช็กอินขึ้นรถแล้ว' : 'ยังไม่เช็กอิน';
-    checkin.style.color = booking.checked_in ? '#2e8b57' : '#8a7a52';
+    checkin.style.color = booking.checked_in ? '#2e8b57' : '#7f93a6';
 
     const qrBox = document.getElementById('bus-ticket-qr');
     qrBox.innerHTML = '';
