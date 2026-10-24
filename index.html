@@ -625,14 +625,15 @@
         </div>
     </div>
 
-    <div id="bus-ticket-modal" class="overlay hidden z-[600]" style="background:rgba(38,67,94,.45)">
+    <div id="bus-ticket-modal" class="overlay hidden z-[600]" style="background:rgba(38,67,94,.45)" onclick="if(event.target===this) closeBusTicket()">
+        <button type="button" class="close-x" onclick="closeBusTicket()" aria-label="ปิดตั๋ว">✕</button>
         <div class="max-w-lg w-full">
             <div class="paper animate-pop">
                 <div class="flex-1 min-w-0">
                     <div class="ph">
                         <div>
                             <p style="font-size:9px;letter-spacing:.3em;opacity:.85">BUS BOARDING PASS</p>
-                            <p class="display" style="font-size:15px;color:#f0deb0">ตั๋วรถบัสทัศนศึกษา</p>
+                            <p class="display" style="font-size:15px">ตั๋วรถบัสทัศนศึกษา</p>
                         </div>
                         <i class="fa-solid fa-bus text-xl" style="opacity:.8"></i>
                     </div>
@@ -649,11 +650,11 @@
                     <p class="k">ที่นั่ง</p>
                     <p id="bus-ticket-seat" class="seatno">--</p>
                     <div id="bus-ticket-qr" class="flex justify-center my-1"></div>
-                    <p id="bus-ticket-checkin" class="text-[10px] font-semibold" style="color:#8a7a52">--</p>
+                    <p id="bus-ticket-checkin" class="text-[10px] font-semibold" style="color:#7f93a6">--</p>
                 </div>
             </div>
             <button id="bus-ticket-cancel-btn" onclick="cancelMyBusBooking()" class="hidden btn btn-danger btn-block mt-4"><i class="fa-solid fa-trash-can"></i> ยกเลิกการจองที่นั่งนี้</button>
-            <button onclick="closeBusTicket()" class="btn btn-quiet btn-block mt-3">ปิดหน้าต่าง</button>
+            <button onclick="closeBusTicket()" class="btn btn-ghost btn-block mt-3">ปิดตั๋ว</button>
         </div>
     </div>
 
