@@ -374,16 +374,16 @@ function printAllBusTickets() {
             }
             .print-page:last-child { page-break-after: auto; }
             .ticket-cell {
-                border: 1px dashed #b9a56b;
+                border: 1px dashed #9fc3e3;
                 border-radius: 3mm;
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
-                background: #fbf7ec;
+                background: #f6fafd;
             }
             .tk-header {
-                background: #1c150a;
-                color: #f0deb0;
+                background: #d6e8fb;
+                color: #34506b;
                 padding: 2mm 3mm;
                 display: flex;
                 align-items: flex-start;
@@ -404,7 +404,7 @@ function printAllBusTickets() {
             .tk-divider { height: 100%; border-left: 1px dashed #cbd5e1; }
             .ticket-right { width: 26mm; flex-shrink: 0; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2mm; gap: 1mm; }
             .tk-seat-label { font-size: 5.5pt; color: #94a3b8; margin: 0; text-transform: uppercase; }
-            .tk-seat { font-size: 12pt; font-weight: bold; color: #8a6a24; margin: 0; }
+            .tk-seat { font-size: 12pt; font-weight: bold; color: #3f86c9; margin: 0; }
             .tk-qr { width: 14mm; height: 14mm; }
         </style>
         </head>
